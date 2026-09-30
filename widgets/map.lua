@@ -6,6 +6,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -46,6 +48,7 @@ end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Map') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local k = draw.fit(cfg.scale, 230, 230)
@@ -106,6 +109,7 @@ function M.main()
         end
       end
     end
+    winfit.fit('TV Map', W, H)
   end)
   if not ok then ac.debug('TV Map', err) end
 end

@@ -6,6 +6,7 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
 
 local ui = ui
 local vec2 = vec2
@@ -35,6 +36,7 @@ end
 
 local function tagDraw(car)
   if not car or not car.isConnected then return end
+  if not cams.gate('TV Tags') then return end
   local cfg = config.get()
   if not cfg.showTags then return end
   if car.isInPit and (car.speedKmh or 0) < 5 then return end

@@ -1,4 +1,7 @@
-# RACE TV v6 // todas as 9 sugestões
+# RACE TV v7 // câmeras + auto-resize
+- **Bug escala resolvido de verdade**: janelas redimensionam sozinhas para o conteúdo (`core/winfit.lua`, técnica CMRT). Escala 1.6 abre a janela junto — sem mais teto de 1.0x.
+- **Bug linhas fora de ordem**: linha pinada (focado) mostra gap do líder, não do vizinho.
+- **Perfis por câmera** (`core/cams.lua`): ONB (cockpit/F1) / EXT (F3/F5/F6/pista) / FRE (livre). Em Settings, cada widget tem ONB/EXT/FRE para você marcar onde aparece. Ex: pedais só no onboard, tower só na externa.
 1. **TYRE na tower**: modo TYRE mostra `M5·1S` (composto·idade·stops) + quadrado colorido; PIT mostra `P2`.
 2. **Som**: fastest/pb/flag-green com toggle (wavs CMRT em `assets/`).
 3. **Delta gráfico live** no Timing: barra móvel ±2s (LapAlly) + número + PREDICTED.

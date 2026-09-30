@@ -5,6 +5,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -30,6 +32,7 @@ end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Spotter') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local s = draw.fit(cfg.scale, 190, 210)
@@ -95,6 +98,7 @@ function M.main()
     end
     local msg = n == 0 and 'CLEAR' or tostring(n) .. ' CLOSE'
     draw.textF(draw.FONT_SEMI, 0, H - 22 * s, msg, 12 * s, n == 0 and rgbm.from0255(0, 200, 80, 255) or rgbm.from0255(255, 80, 90, 255), ui.Alignment.Center, W, 18 * s)
+    winfit.fit('TV Spotter', W, H)
   end)
   if not ok then ac.debug('ETV Radar', err) end
 end

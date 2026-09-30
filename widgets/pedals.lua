@@ -5,6 +5,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -20,6 +22,7 @@ function M.on_session_start() end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Inputs') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local s = draw.fit(cfg.scale, 300, 132)
@@ -57,6 +60,7 @@ function M.main()
     ui.drawRectFilled(vec2(cx - 3 * s, y), vec2(cx + 3 * s, y + 16 * s), draw.WHITE)
     local deg = math.floor(math.abs(steer) * 450)
     draw.textF(draw.FONT_SEMI, W - 52 * s, y, (steer < -0.02 and 'L' or steer > 0.02 and 'R' or '-') .. ' ' .. tostring(deg), 12 * s, draw.WHITE, ui.Alignment.End, 44 * s, 16 * s)
+    winfit.fit('TV Inputs', W, H)
   end)
   if not ok then ac.debug('ETV Pedals', err) end
 end

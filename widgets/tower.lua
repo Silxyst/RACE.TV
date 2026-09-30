@@ -10,6 +10,8 @@ local anim = require('core.anim')
 local tyres = require('core.tyres')
 local pits = require('core.pits')
 local classes = require('core.classes')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -76,6 +78,7 @@ end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Tower') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     -- BASE de referência; k encaixa na janela real (fix escala)
@@ -280,8 +283,10 @@ function M.main()
       else
         local gapStr = 'LEADER'
         if e.pos > 1 then
-          local ga = prevEntry and estimateGap(prevEntry, e, trackLen) or nil
           local gl = estimateGap(leaderEntry, e, trackLen)
+          local ga = nil
+          -- linha pinada fora de ordem: usa gap do líder, não do vizinho
+          if prevEntry and e.pos > prevEntry.pos then ga = estimateGap(prevEntry, e, trackLen) end
           if ga and ga <= 90 then gapStr = draw.fmtSec(ga)
           elseif gl and gl <= 90 then gapStr = draw.fmtSec(gl)
           else gapStr = '+1 LAP' end
@@ -302,6 +307,7 @@ function M.main()
     draw.textF(draw.FONT_TXT, 0, fy, ftxt, 10.5 * k, draw.WHITE, ui.Alignment.Center, W, footH)
 
     ui.drawRect(vec2(0.5, 0.5), vec2(W - 0.5, H - 0.5), rgbm.from0255(90, 200, 255, 200), 1.5)
+    winfit.fit('TV Tower', W, H)
   end)
   if not ok then ac.debug('PHIL Tower', err) end
 end

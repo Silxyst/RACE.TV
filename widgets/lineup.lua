@@ -7,6 +7,8 @@ local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
 local anim = require('core.anim')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -25,6 +27,7 @@ function M.on_session_start() intro = 0 end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Lineup') then return end
   local ok, err = pcall(function()
     local sim = ac.getSim()
     if not sim then return end
@@ -73,6 +76,7 @@ function M.main()
       draw.textF(draw.FONT_TXT, W - 220 * k, ry, ((okC and cn) or ''):upper():sub(1, 24), 11 * k, draw.PHIL_GRAY, ui.Alignment.End, 212 * k, rowH)
     end
     ui.popClipRect()
+    winfit.fit('TV Lineup', W, H)
   end)
   if not ok then ac.debug('TV Lineup', err) end
 end

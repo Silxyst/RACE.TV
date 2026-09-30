@@ -6,6 +6,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 local anim = require('core.anim')
 local sectors = require('core.sectors')
 
@@ -114,6 +116,7 @@ end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Battle') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local k = draw.fit(cfg.scale, 640, 118)
@@ -235,6 +238,7 @@ function M.main()
 
     drawCardK(slideX, 0, foc2, gapFoc)
     drawCardK(slideX + cw + gap, 0, rival, gapRiv)
+    winfit.fit('TV Battle', cw * 2 + gap, ch)
   end)
   if not ok then ac.debug('PHIL Battle', err) end
 end

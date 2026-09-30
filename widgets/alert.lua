@@ -7,6 +7,8 @@ local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
 local anim = require('core.anim')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -93,6 +95,7 @@ function M.on_session_start() showT = 99 lastBest = nil lastFlag = nil lastPB = 
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Alert') then return end
   if showT > 6 then return end
   local ok, err = pcall(function()
     local cfg = config.get()
@@ -108,6 +111,7 @@ function M.main()
     draw.textF(draw.FONT_HEAD, 16 * k, y + 2 * k, txt1, 17 * k, rgbm(col1.r, col1.g, col1.b, alpha), ui.Alignment.Start, W - 32 * k, 24 * k)
     draw.textF(draw.FONT_TXT, 16 * k, y + 26 * k, txt2, 12 * k, rgbm(1, 1, 1, alpha), ui.Alignment.Start, W - 32 * k, 20 * k)
     ui.popClipRect()
+    winfit.fit('TV Alert', W, H)
   end)
   if not ok then ac.debug('TV Alert', err) end
 end

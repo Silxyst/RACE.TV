@@ -107,6 +107,21 @@ function M.settingsUI()
   if ui.checkbox('Multiclasse: só a classe do focado', cfg.classFilter) then S.classFilter:set(not cfg.classFilter) end
   if ui.checkbox('Som nos alertas (fastest/PB/flag)', cfg.sound) then S.sound:set(not cfg.sound) end
   ui.separator()
+  ui.text('Por câmera — escolha o que aparece em cada câmera:')
+  ui.text('Atual agora: ' .. require('core.cams').groupLabel())
+  for _, title in ipairs(require('core.cams').WIDGETS) do
+    local m = require('core.cams').mask(title)
+    ui.text(title .. ':')
+    for _, g in ipairs(require('core.cams').GROUPS) do
+      local has = (m % (g.bit * 2)) >= g.bit
+      if ui.checkbox(g.code .. '##cam_' .. title .. g.code, has) then
+        require('core.cams').set(title, has and (m - g.bit) or (m + g.bit))
+      end
+      ui.sameLine()
+    end
+    ui.text('') -- quebra linha
+  end
+  ui.separator()
   ui.text('Posicionamento automático (16:9, proporcional):')
   if ui.button('Aplicar layout agora') then
     local n = 0

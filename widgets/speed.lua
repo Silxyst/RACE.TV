@@ -5,6 +5,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -21,6 +23,7 @@ function M.on_session_start() end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Telemetry') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local k = draw.fit(cfg.scale, 470, 64)
@@ -88,6 +91,7 @@ function M.main()
 
     draw.textF(draw.FONT_TXT, W - 58 * k, H - 20 * k, 'TELEMETRY', 9 * k, draw.WHITE, ui.Alignment.Start, 52 * k, 12 * k)
     ui.drawRect(vec2(0.5, 0.5), vec2(W - 0.5, H - 0.5), rgbm.from0255(70, 70, 95, 255), 1)
+    winfit.fit('TV Telemetry', W, H)
   end)
   if not ok then ac.debug('PHIL Tele', err) end
 end

@@ -6,6 +6,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -29,6 +31,7 @@ function M.on_session_start() anim = 0 end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Onboard Top') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local k = draw.fit(cfg.scale, 480, 52)
@@ -67,6 +70,7 @@ function M.main()
     draw.textF(draw.FONT_HEAD, nx + nw, y + 8 * k, 'ONBOARD', 11 * k, draw.WHITE, ui.Alignment.Center, labW, 20 * k)
     -- sublinhado
     ui.drawRectFilled(vec2(nx, y + H - 3 * k), vec2(nx + nw, y + H), draw.PHIL_BG)
+    winfit.fit('TV Onboard Top', W, H)
   end)
   if not ok then ac.debug('PHIL Onboard', err) end
 end

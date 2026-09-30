@@ -5,6 +5,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -20,6 +22,7 @@ function M.on_session_start() end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Timing') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local s = draw.fit(cfg.scale, 300, 150)
@@ -107,6 +110,7 @@ function M.main()
       else ui.drawRectFilled(vec2(midX, dy), vec2(ex, dy + bh), col) end
       draw.textF(draw.FONT_SEMI, W - 90 * s, dy - 4 * s, draw.fmtGap(last - best), 11 * s, col, ui.Alignment.End, 82 * s, 20 * s)
     end
+    winfit.fit('TV Timing', W, H)
   end)
   if not ok then ac.debug('ETV Lap', err) end
 end

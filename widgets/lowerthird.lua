@@ -5,6 +5,8 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local cams = require('core.cams')
+local winfit = require('core.winfit')
 
 local ac = ac
 local ui = ui
@@ -31,6 +33,7 @@ function M.on_session_start() anim = 0 end
 
 function M.main()
   if not isVisible then return end
+  if not cams.gate('TV Onboard Bar') then return end
   local ok, err = pcall(function()
     local cfg = config.get()
     local s = draw.fit(cfg.scale, 460, 92)
@@ -87,6 +90,7 @@ function M.main()
 
     -- clip animacao (reveal)
     -- (simples: ja faz slide; sem clip extra para nao quebrar)
+    winfit.fit('TV Onboard Bar', W, H)
   end)
   if not ok then ac.debug('ETV Lower', err) end
 end
