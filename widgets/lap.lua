@@ -1,6 +1,6 @@
 -- ========================================
--- VELOCITY SLASH // widgets/lap.lua
--- Current / Last / Best + delta bar (best vs last)
+-- ENDURO TV // widgets/lap.lua
+-- Timing screen solida: CUR/LAST/BEST + delta
 -- ========================================
 local M = {}
 local config = require('core.config')
@@ -12,9 +12,8 @@ local vec2 = vec2
 local rgbm = rgbm
 
 local isVisible = false
-local pulse = 0
 function M.init() end
-function M.update(dt) pulse = pulse + (dt or 0.016) end
+function M.update(dt) end
 function M.on_open() isVisible = true end
 function M.on_close() isVisible = false end
 function M.on_session_start() end
@@ -24,32 +23,24 @@ function M.main()
   local ok, err = pcall(function()
     local cfg = config.get()
     local s = cfg.scale
-    local W, H = 370 * s, 190 * s
-    draw.slashPanel(0, 0, W, H, cfg, { slash = 22 * s })
-    draw.header(0, 0, W, cfg, 'LAP // DELTA', pulse * 4)
+    local W, H = 300 * s, 158 * s
+    local headH = 24 * s
+
+    ui.drawRectFilledMultiColor(vec2(0, 0), vec2(W, headH), cfg.brand1, draw.darken(cfg.brand1, 0.55), draw.darken(cfg.brand1, 0.55), cfg.brand1)
+    draw.textF(draw.FONT_HEAD, 8 * s, 0, 'TIMING', 13 * s, draw.WHITE, ui.Alignment.Start, W - 16 * s, headH)
+    ui.drawRectFilled(vec2(0, headH), vec2(W, H), draw.DARK)
 
     local sim = ac.getSim()
-    local focIdx = (sim and sim.focusedCar) or 0
-    local car = ac.getCar(focIdx)
+    local foc = (sim and sim.focusedCar) or 0
+    local car = ac.getCar(foc)
     if not car then return end
 
     local cur = car.lapTimeMs or 0
     local last = car.previousLapTimeMs or car.lastLapTimeMs or 0
     local best = car.bestLapTimeMs or 0
-    -- fallback: se best 0, usa last
     if (not best or best <= 0) and last and last > 0 then best = last end
 
-    local y0 = 54 * s
-    local function lapRow(label, ms, col, row, big)
-      local ly = y0 + row * 30 * s
-      draw.text(14 * s, ly, label, 12 * s, draw.dim(1), ui.Alignment.Start, 70 * s, 22 * s)
-      draw.text(80 * s, ly - (big and 4 * s or 0), draw.fmtLap(ms), (big and 22 or 17) * s, col, ui.Alignment.Start, 270 * s, 26 * s)
-    end
-
-    lapRow('CUR', cur, draw.white(1), 0, true)
-    lapRow('LAST', last, draw.dim(1), 1, false)
-
-    -- BEST com destaque accent + roxo se for overall best da sessao
+    -- overall best da sessao (roxo TV)
     local sessBest = nil
     if sim then
       for i = 0, (sim.carsCount or 1) - 1 do
@@ -61,31 +52,32 @@ function M.main()
       end
     end
     local isOverall = best and best > 0 and sessBest and best <= sessBest + 1
-    local bestCol = isOverall and rgbm(0.75, 0.4, 1, 1) or draw.accent(cfg, 1)
-    lapRow(isOverall and 'BEST ★' or 'BEST', best, bestCol, 2, false)
 
-    -- delta bar: last vs best (-2s..+2s)
-    local dy = y0 + 3 * 30 * s + 6 * s
-    draw.text(14 * s, dy, 'Δ BEST', 11 * s, draw.dim(1), ui.Alignment.Start, 60 * s, 16 * s)
-    local bx, bw, bh = 74 * s, W - 88 * s, 10 * s
-    ui.drawRectFilled(vec2(bx, dy + 3 * s), vec2(bx + bw, dy + 3 * s + bh), rgbm(1, 1, 1, 0.10), 3)
-    -- centro
-    ui.drawLine(vec2(bx + bw / 2, dy + 1 * s), vec2(bx + bw / 2, dy + 5 * s + bh), rgbm(1, 1, 1, 0.4), 1)
+    local y0 = headH + 8 * s
+    draw.textF(draw.FONT_TXT, 8 * s, y0, 'CUR', 11 * s, draw.GRAY, ui.Alignment.Start, 44 * s, 18 * s)
+    draw.textF(draw.FONT_NUM, 56 * s, y0 - 4 * s, draw.fmtLap(cur), 20 * s, draw.WHITE, ui.Alignment.Start, 236 * s, 26 * s)
+    draw.textF(draw.FONT_TXT, 8 * s, y0 + 26 * s, 'LAST', 11 * s, draw.GRAY, ui.Alignment.Start, 44 * s, 18 * s)
+    draw.textF(draw.FONT_SEMI, 56 * s, y0 + 26 * s, draw.fmtLap(last), 16 * s, draw.GRAY, ui.Alignment.Start, 236 * s, 22 * s)
+    draw.textF(draw.FONT_TXT, 8 * s, y0 + 50 * s, 'BEST', 11 * s, draw.GRAY, ui.Alignment.Start, 44 * s, 18 * s)
+    local bcol = isOverall and rgbm.from0255(190, 90, 255, 255) or draw.WHITE
+    draw.textF(draw.FONT_SEMI, 56 * s, y0 + 50 * s, draw.fmtLap(best) .. (isOverall and '  ★' or ''), 16 * s, bcol, ui.Alignment.Start, 236 * s, 22 * s)
+
+    -- delta bar solida
+    local dy = y0 + 76 * s
+    ui.drawRectFilled(vec2(8 * s, dy), vec2(W - 8 * s, dy + 12 * s), rgbm.from0255(40, 40, 52, 255))
+    ui.drawRectFilled(vec2(W / 2 - 1, dy - 2 * s), vec2(W / 2 + 1, dy + 14 * s), rgbm.from0255(130, 130, 150, 255))
     if last and last > 0 and best and best > 0 then
-      local d = (last - best) / 1000 -- seg, + = pior
-      local norm = draw.clamp(d / 2, -1, 1) -- -1 bom, +1 ruim
-      local cx = bx + bw / 2
-      local ex = cx + (bw / 2) * norm
-      local col = norm <= 0.05 and rgbm(0.2, 1, 0.45, 1) or rgbm(1, 0.3, 0.35, 1)
-      if norm < 0 then
-        ui.drawRectFilled(vec2(ex, dy + 3 * s), vec2(cx, dy + 3 * s + bh), col, 2)
-      else
-        ui.drawRectFilled(vec2(cx, dy + 3 * s), vec2(ex, dy + 3 * s + bh), col, 2)
-      end
-      draw.text(bx + bw + 6 * s, dy, draw.fmtGap(last - best), 11 * s, col, ui.Alignment.Start, 80 * s, 16 * s)
+      local d = (last - best) / 1000
+      local norm = draw.clamp(d / 2, -1, 1)
+      local cx = W / 2
+      local ex = cx + (W / 2 - 10 * s) * norm
+      local col = norm <= 0.05 and rgbm.from0255(0, 200, 80, 255) or rgbm.from0255(225, 6, 0, 255)
+      if norm < 0 then ui.drawRectFilled(vec2(ex, dy), vec2(cx, dy + 12 * s), col)
+      else ui.drawRectFilled(vec2(cx, dy), vec2(ex, dy + 12 * s), col) end
+      draw.textF(draw.FONT_SEMI, W - 90 * s, dy - 4 * s, draw.fmtGap(last - best), 11 * s, col, ui.Alignment.End, 82 * s, 20 * s)
     end
   end)
-  if not ok then ac.debug('VS Lap', err) end
+  if not ok then ac.debug('ETV Lap', err) end
 end
 
 return M

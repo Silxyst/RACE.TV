@@ -1,103 +1,80 @@
 -- ========================================
--- VELOCITY SLASH // core/config.lua
--- Config central com ac.storage (persiste entre sessoes)
+-- ENDURO TV // core/config.lua
+-- Presets broadcast (WEC/IMSA/NLS). Sem nome de canal obrigatorio.
 -- ========================================
 local M = {}
 
 local function stored(key, def)
-  local s = ac.storage('VS_' .. key, def)
-  return s
+  return ac.storage('ETV_' .. key, def)
 end
 
 local S = {
-  channel   = stored('channel', 'MEU CANAL'),
-  accent    = stored('accent', 1),        -- 1 cyan, 2 magenta, 3 lime, 4 orange
+  preset    = stored('preset', 1),      -- 1 Race Red, 2 Enduro Blue, 3 NLS Green
   scale     = stored('scale', 1.0),
-  opacity   = stored('opacity', 0.92),
-  towerRows = stored('towerRows', 10),
+  towerRows = stored('towerRows', 12),
   showTyre  = stored('showTyre', true),
-  showRadar = stored('showRadar', true),
   mph       = stored('mph', false),
+  series    = stored('series', 'ENDURO TV'),
 }
 
-local ACCENTS = {
-  { r = 0.0,  g = 0.90, b = 1.0  },  -- cyan #00E5FF
-  { r = 1.0,  g = 0.15, b = 0.65 },  -- magenta
-  { r = 0.55, g = 1.0,  b = 0.15 },  -- lime
-  { r = 1.0,  g = 0.55, b = 0.05 },  -- orange
+local PRESETS = {
+  { name = 'RACE RED (IMSA/WEC)',   c1 = { 225, 6, 0 },   c2 = { 140, 0, 0 } },
+  { name = 'ENDURO BLUE (WEC)',     c1 = { 0, 110, 255 },  c2 = { 0, 60, 140 } },
+  { name = 'NLS GREEN',             c1 = { 0, 180, 80 },   c2 = { 0, 100, 45 } },
 }
-local ACCENT_NAMES = { 'Cyan Stream', 'Magenta Pulse', 'Lime Volt', 'Orange Attack' }
+
+function M.presetColor(idx)
+  idx = math.max(1, math.min(#PRESETS, idx or 1))
+  local p = PRESETS[idx]
+  return rgbm.from0255(p.c1[1], p.c1[2], p.c1[3], 255),
+         rgbm.from0255(p.c2[1], p.c2[2], p.c2[3], 255), p.name
+end
 
 function M.get()
-  local accentIdx = S.accent:get() or 1
-  if type(accentIdx) ~= 'number' then accentIdx = 1 end
-  accentIdx = math.max(1, math.min(#ACCENTS, math.floor(accentIdx)))
-  local a = ACCENTS[accentIdx]
-  local scale = S.scale:get() or 1.0
-  if type(scale) ~= 'number' then scale = 1.0 end
-  scale = math.max(0.7, math.min(1.6, scale))
-  local opacity = S.opacity:get() or 0.92
-  if type(opacity) ~= 'number' then opacity = 0.92 end
-  opacity = math.max(0.35, math.min(1.0, opacity))
-  local rows = S.towerRows:get() or 10
-  if type(rows) ~= 'number' then rows = 10 end
+  local pi = S.preset:get() or 1
+  if type(pi) ~= 'number' then pi = 1 end
+  pi = math.max(1, math.min(#PRESETS, math.floor(pi)))
+  local c1, c2, pname = M.presetColor(pi)
+  local sc = S.scale:get() or 1.0
+  if type(sc) ~= 'number' then sc = 1.0 end
+  sc = math.max(0.7, math.min(1.6, sc))
+  local rows = S.towerRows:get() or 12
+  if type(rows) ~= 'number' then rows = 12 end
   rows = math.max(5, math.min(20, math.floor(rows)))
   return {
-    channel = tostring(S.channel:get() or 'MEU CANAL'),
-    accentIdx = accentIdx,
-    accent = a,
-    accentName = ACCENT_NAMES[accentIdx],
-    scale = scale,
-    opacity = opacity,
+    preset = pi, presetName = pname, brand1 = c1, brand2 = c2,
+    scale = sc,
     towerRows = rows,
     showTyre = S.showTyre:get() ~= false,
-    showRadar = S.showRadar:get() ~= false,
     mph = S.mph:get() == true,
+    series = tostring(S.series:get() or 'ENDURO TV'),
   }
 end
 
 function M.settingsUI()
-  ui.text('VELOCITY SLASH // Config da Live')
+  ui.text('ENDURO TV // Broadcast Settings')
   ui.separator()
-
   local cfg = M.get()
-
-  -- Nome do canal (assinatura correta CSP: newVal, changed = inputText)
-  ui.text('Nome do canal (aparece no header e lower-third):')
-  local cur = S.channel:get() or 'MEU CANAL'
-  local newVal = ui.inputText('##vs_channel', cur)
-  if type(newVal) == 'string' and #newVal > 0 and newVal ~= cur then
-    S.channel:set(newVal:sub(1, 28))
+  ui.text('Identidade da transmissao:')
+  for i, p in ipairs(PRESETS) do
+    if ui.radioButton(p.name, cfg.preset == i) then S.preset:set(i) end
   end
-
-  -- Accent
-  ui.text('Cor de destaque (identidade unica): ' .. (cfg.accentName or ''))
-  for i, n in ipairs(ACCENT_NAMES) do
-    if ui.radioButton(n, cfg.accentIdx == i) then S.accent:set(i) end
-  end
-
   ui.separator()
-  local s = cfg.scale
-  local ns = ui.slider('##vs_scale', s, 0.7, 1.6, 'Escala global: %.2f')
-  if ns ~= s then S.scale:set(ns) end
-
-  local o = cfg.opacity
-  local no = ui.slider('##vs_opacity', o, 0.35, 1.0, 'Opacidade fundo: %.2f')
-  if no ~= o then S.opacity:set(no) end
-
+  ui.text('Rotulo da serie (ex: IMSA, WEC, NLS, LIGA):')
+  local sv = ui.inputText('##etv_series', cfg.series)
+  if type(sv) == 'string' and #sv > 0 and sv ~= cfg.series then
+    S.series:set(sv:sub(1, 18):upper())
+  end
+  local sc = cfg.scale
+  local ns = ui.slider('##etv_scale', sc, 0.7, 1.6, 'Escala: %.2f')
+  if ns ~= sc then S.scale:set(ns) end
   local r = cfg.towerRows
-  local nr = ui.slider('##vs_rows', r, 5, 20, 'Linhas da Tower: %.0f')
+  local nr = ui.slider('##etv_rows', r, 5, 20, 'Linhas Tower: %.0f')
   if nr ~= r then S.towerRows:set(math.floor(nr)) end
-
-  local st = cfg.showTyre
-  if ui.checkbox('Mostrar bolinha de pneu na Tower', st) then S.showTyre:set(not st) end
-
-  local mph = cfg.mph
-  if ui.checkbox('Velocidade em MPH (padrao KM/H)', mph) then S.mph:set(not mph) end
-
+  if ui.checkbox('Tyre dot na Tower', cfg.showTyre) then S.showTyre:set(not cfg.showTyre) end
+  if ui.checkbox('MPH (padrao KM/H)', cfg.mph) then S.mph:set(not cfg.mph) end
   ui.separator()
-  ui.textWrapped('DICA OBS: posicione cada janela (VS Tower, VS Speed, etc) pelo Content Manager > Apps. Ative Sombra OFF. Capture o jogo via Game Capture. Cada widget e uma fonte separada dentro do jogo.')
-  ui.textWrapped('Layout sugerido 16:9: Tower esquerda | Lap topo-direita | Speed inferior-direita | Pedals inferior-centro | Lower-Third inferior-esquerda | Radar acima do Speed.')
+  ui.textWrapped('Posicione no Content Manager > Apps: Tower esquerda, Onboard inferior-esquerda, Timing topo-direita, Telemetry inferior-direita. Estilo chapado igual TV — sem transparencia.')
 end
 
 return M

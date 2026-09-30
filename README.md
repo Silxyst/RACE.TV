@@ -1,58 +1,35 @@
-# VELOCITY SLASH // Streamer HUD
-HUD broadcast único para criador de conteúdo e live no OBS — Assetto Corsa + CSP.
+# ENDURO TV // Streamer HUD v2
+Broadcast **sólida** estilo IMSA / WEC / NLS para live no OBS. Refeito do zero após feedback: sem glass, sem neon, sem slash — 100% TV.
 
-## Conceito (totalmente diferente)
-Linguagem **SLASH**: todo painel é glass escuro + barra accent lateral + corte diagonal no topo + header `// SEU CANAL ● LIVE`.
-Nenhum HUD da pasta (CMRT, F1-25, WEC, IMSA, GT7 Tags, iRacing Pedals) usa essa identidade. É pensado para leitura em 1080p no YouTube/Twitch.
+## O que mudou da v1 (Velocity Slash)
+- Removido: painéis glass arredondados, barra neon, corte diagonal, LIVE dot, canal obrigatório.
+- Novo: retângulos chapados com gradiente TV (cor cheia → 55% escuro), tipografia **Archivo Italic Bold** real (copiada da NLS), header com cor de bandeira (amarelo pisca em caution), linhas navy alternadas, tyre dot quadrado, overall best roxo ★, faixa ONBOARD navy + número gigante.
 
-## Módulos (6 janelas separadas = 6 fontes posicionáveis)
-| Janela CM | Arquivo | O que mostra |
+## Módulos (renomeados, mesmas janelas)
+| Janela CM | Tamanho | Estilo |
 |---|---|---|
-| VS Tower | `widgets/tower.lua` | Timing tower P1-P10 (configurável 5-20), gap estimado líder/à frente, tyre dot, battle highlight pulsante <1s, focus highlight |
-| VS Speed Gear | `widgets/speed.lua` | Gear gigante + speed + RPM slash bar + SHIFT flash + nome do focado |
-| VS Pedals | `widgets/pedals.lua` | THR/BRK slim + steering bipolar com graus — prova de pilotagem |
-| VS Lap Delta | `widgets/lap.lua` | CUR/LAST/BEST + ★ overall + delta bar vs BEST |
-| VS Lower Third | `widgets/lowerthird.lua` | Lower-third animado do piloto focado: P, nome, carro, status, BEST, branding canal |
-| VS Radar | `widgets/radar.lua` | Radar circular 60m com orientação pelo look do carro, alerta vermelho <8m |
-| VS Settings | `core/config.lua` | Nome canal, 4 accents, escala 0.7-1.6, opacidade, linhas tower, MPH |
+| ETV Tower | 310x600 | Header serie+sessão/flag + linhas P/NOME/GAP + tyre square + focus bar + battle outline |
+| ETV Onboard Telemetry | 310x160 | Header ONBOARD+piloto + RPM top bar + GEAR gigante + SPEED + THR/BRK |
+| ETV Inputs | 310x140 | THR/BRK/STR sólidos pit-wall |
+| ETV Timing | 310x170 | CUR/LAST/BEST + delta bar sólida |
+| ETV Onboard Bar | 470x100 | Barra brand + POS gigante + nome + carro + faixa ONBOARD navy |
+| ETV Spotter | 200x220 | Box navy + anéis + dots (vermelho <8m) |
+| ETV Settings | — | Preset Race Red / Enduro Blue / NLS Green + sigla série + escala + linhas + tyre + MPH |
 
-Modo híbrido: tudo segue `sim.focusedCar`. Pilotando mostra YOU. Transmitindo, troca com PageUp/PageDown ou click e todos os widgets seguem.
+Tudo segue `sim.focusedCar` (híbrido piloto/transmissão).
 
-## Instalação
-1. Pasta já está em `apps/lua/Streamer Hud` com `Streamer Hud.lua` (nome == pasta, obrigatório CSP).
-2. Abra Content Manager > Settings > Custom Shaders Patch > Apps > ative:
-   - VS Tower, VS Speed Gear, VS Pedals, VS Lap Delta, VS Lower Third, VS Radar, VS Settings
-3. Entre na pista, abra menu lateral de Apps (passar mouse na direita), posicione cada janela:
-   - Tower esquerda, Lap topo-direita, Speed inferior-direita, Pedals inferior-centro, Lower-Third inferior-esquerda, Radar acima do Speed.
-4. VS Settings > digite nome do canal + escolha accent. Salva automático via `ac.storage`.
+## Fontes
+`fonts/` com Archivo-ExtraBoldItalic / BoldItalic / SemiBoldItalic / OpenSans-SemiBold (das mesmas famílias usadas por WEC/IMSA/NLS). Uso via `ui.pushDWriteFont('fonts/...')` relativo ao app.
 
-## OBS
-- Use **Game Capture** do AC (HUD desenha dentro do jogo, sem janela externa).
-- Desative sombra dos apps no CM para look clean.
-- Para cinematic: opacidade 0.6 + escala 0.9. Para destaque: opacidade 1.0.
-- LIVE dot pulsa sozinho — ótimo gatilho visual de "ao vivo".
-- Plugin opcional `acc-obs-plugin` permite separar HUD em textura limpa se quiser compor no OBS.
+## Cores
+- Navy #0F053C, Dark #12121A/#1C1C26, Race Red #E10600, Enduro Blue #006EFF, NLS Green #00B450, Yellow #FFD700, Green #00B432, Purple ★ #BE5AFF.
 
-## Referências pesquisadas
-- Locais: `CMRT-Complete-HUD` (30+ módulos, gaps por spline), `F1-25` (arquitetura modular + monoespaçado), `WEC_HUD_2026` (tower TV + focusCar + classes), `FSH_IMSA_HUD_26` (multiclasse), `GT7DriverTags` (tags 3D adjacentes), `iRacing-Pedals-HUD` (pedals + telemetry graph).
-- Web: Track Impulse overlays, RaceLab overlays, ACTV Graphics Suite, CMRT Broadcast HUD, WEC 2025 nova identidade TV (sidebar + sector colors + brand colors), OBS CSP plugin (`shared/utils/obs`).
+## Instalar / posicionar
+1. CM > CSP > Apps > ative os 7 ETV.
+2. Posicione: Tower esquerda | Timing topo-direita | Telemetry inf-direita | Inputs inf-centro | Onboard Bar inf-esquerda | Spotter acima Telemetry.
+3. ETV Settings > preset + sigla (ex: IMSA, WEC, NLS).
 
-## Estrutura
-```
-Streamer Hud/
-  manifest.ini
-  Streamer Hud.lua
-  icon.png
-  core/config.lua  (settings persistentes)
-  core/draw.lua    (slashPanel, header, hbar, fmtLap/Gap, tyreColor)
-  widgets/tower.lua / speed.lua / pedals.lua / lap.lua / lowerthird.lua / radar.lua
-```
-
-## Limitações honestas V1
-- Gap é **estimado** por `splinePosition + lapCount` (mesma técnica fallback do CMRT). Em multiclasse/online com volta de diferença mostra `+1 LAP`.
-- Sem assets externos (fonte/imagem) de propósito: zero-dependência, funciona em qualquer resolução.
-- Próximos passos: tyre real via extended physics, battle detector com som, auto-director, ticker inferior, presets OBS 16:9/21:9 em 1 clique.
-
-## Teste
-- Sintaxe validada com `lupa LuaRuntime.compile` em todos os 9 .lua.
-- Para validar no jogo: CM > Drive > ative apps > confira console CSP sem `VS ERROR`.
+## Notas honestas
+- Gap estimado por spline (fallback CMRT). Mostra +1 LAP com volta de diferença.
+- Sem logos de marcas (evita asset pesado); número exibido = POS.
+- Sintaxe validada via lupa em 9 .lua.

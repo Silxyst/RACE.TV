@@ -1,6 +1,6 @@
 -- ========================================
--- VELOCITY SLASH // widgets/tower.lua
--- Timing Tower broadcast com gaps estimados + battle highlight
+-- ENDURO TV // widgets/tower.lua
+-- Timing Tower solida estilo WEC/IMSA/NLS
 -- ========================================
 local M = {}
 local config = require('core.config')
@@ -8,8 +8,8 @@ local draw = require('core.draw')
 
 local ac = ac
 local ui = ui
-local rgbm = rgbm
 local vec2 = vec2
+local rgbm = rgbm
 local math = math
 
 local isVisible = false
@@ -32,14 +32,12 @@ end
 local function estimateGap(leaderEntry, entry, trackLen)
   if not leaderEntry or not entry then return nil end
   if entry.idx == leaderEntry.idx then return 0 end
-  local leaderCar, car = leaderEntry.car, entry.car
-  if not leaderCar or not car then return nil end
-  local lp = carProgress(leaderCar)
-  local cp = carProgress(car)
+  local lp = carProgress(leaderEntry.car)
+  local cp = carProgress(entry.car)
   local diff = lp - cp
   if diff < 0 then diff = 0 end
-  if diff > 1.5 then return nil end -- volta completa, mostra VOLTA
-  local kmh = car.speedKmh or 120
+  if diff > 1.5 then return nil end
+  local kmh = entry.car.speedKmh or 110
   if type(kmh) ~= 'number' or kmh < 50 then kmh = 110 end
   local ms = kmh / 3.6
   if ms < 1 then return nil end
@@ -51,17 +49,17 @@ function M.main()
   local ok, err = pcall(function()
     local cfg = config.get()
     local s = cfg.scale
-    local W, H = 340 * s, 580 * s
-    local x, y = 0, 0
-    draw.slashPanel(x, y, W, H, cfg, { slash = 22 * s })
-    draw.header(x, y, W, cfg, 'TIMING TOWER', pulse * 4)
+    local W = 300 * s
+    local headH = 30 * s
+    local rowH = 26 * s
+    local maxRows = cfg.towerRows or 12
+    local H = headH + maxRows * rowH + 22 * s
 
     local sim = ac.getSim()
     if not sim then return end
     local list = {}
     local focused = sim.focusedCar or 0
     local trackLen = sim.trackLengthM or 4500
-
     for i = 0, (sim.carsCount or 1) - 1 do
       local car = ac.getCar(i)
       if car and car.isConnected ~= false then
@@ -70,86 +68,88 @@ function M.main()
     end
     table.sort(list, function(a, b) return a.pos < b.pos end)
 
-    local maxRows = cfg.towerRows or 10
-    local rowH = 34 * s
-    local startY = y + 52 * s
-    local leaderEntry = list[1]
-
-    -- session label
-    local sess = ac.getSession(sim.currentSessionIndex or 0)
-    local sessName = 'RACE'
-    if sess and sess.type then
-      local t = sess.type
-      -- ac.SessionType: 0 practice? mapear generico
-      if t == ac.SessionType.Qualify then sessName = 'QUALIFY'
-      elseif t == ac.SessionType.Practice then sessName = 'PRACTICE'
-      elseif t == ac.SessionType.Race then sessName = 'RACE'
-      else sessName = tostring(t):upper() end
+    -- HEADER: serie + sessao, cor de bandeira se caution
+    local sessTxt = draw.sessionLabel(sim)
+    local isCaution = sim.raceFlagType == ac.FlagType.Caution
+    local h1, h2, hTxt, hCol
+    if isCaution then
+      local blink = math.floor(pulse * 1.5) % 2 == 0
+      hTxt = blink and 'YELLOW FLAG' or sessTxt
+      h1 = draw.YELLOW
+      h2 = draw.darken(draw.YELLOW, 0.65)
+      hCol = rgbm.from0255(15, 5, 50, 255)
+    else
+      hTxt = (cfg.series or 'ENDURO TV') .. '  •  ' .. sessTxt
+      h1 = cfg.brand1
+      h2 = cfg.brand2
+      hCol = draw.WHITE
     end
-    draw.text(x + 12 * s, startY - 20 * s, sessName .. '  •  ' .. tostring(#list) .. ' CARS', 12 * s, draw.dim(1), ui.Alignment.Start, 200 * s, 16 * s)
+    draw.solidBar(0, 0, W, headH, h1)
+    -- sombra gradiente inferior do header
+    ui.drawRectFilledMultiColor(vec2(0, 0), vec2(W, headH), h1, draw.darken(h1, 0.55), draw.darken(h1, 0.55), h1)
+    draw.textF(draw.FONT_HEAD, 8 * s, 1 * s, hTxt, 15 * s, hCol, ui.Alignment.Start, W - 16 * s, headH - 2 * s)
 
+    local leaderEntry = list[1]
     local prevEntry = nil
     for r = 1, math.min(maxRows, #list) do
       local e = list[r]
       local car = e.car
-      local ry = startY + (r - 1) * (rowH + 4 * s)
+      local ry = headH + (r - 1) * rowH
       local isFoc = (e.idx == focused)
-      local gapLeader = estimateGap(leaderEntry, e, trackLen)
-      local gapAhead = prevEntry and estimateGap(prevEntry, e, trackLen) or nil
-      local isBattle = (gapAhead and gapAhead < 1.0) or (r > 1 and gapLeader and gapLeader < 1.5 and r <= 3)
+      local alt = (r % 2 == 0)
 
-      -- fundo linha
-      local bgA = isFoc and 0.55 or 0.32
-      local bgc = isFoc and rgbm(1, 1, 1, 0.10 * cfg.opacity) or rgbm(1, 1, 1, 0.045 * cfg.opacity)
-      ui.drawRectFilled(vec2(x + 8 * s, ry), vec2(x + W - 8 * s, ry + rowH), bgc, 5 * s)
+      draw.rowBg(0, ry, W, rowH, alt)
       if isFoc then
-        ui.drawRectFilled(vec2(x + 8 * s, ry), vec2(x + 12 * s, ry + rowH), draw.accent(cfg, 1), 2)
+        ui.drawRectFilled(vec2(0, ry), vec2(4 * s, ry + rowH), cfg.brand1)
       end
-      if isBattle then
-        local bl = 0.35 + 0.35 * math.sin(pulse * 6)
-        ui.drawRect(vec2(x + 8 * s, ry), vec2(x + W - 8 * s, ry + rowH), rgbm(1, 0.25, 0.4, bl), 1.5)
+      -- battle: borda fina vermelha
+      local gapAhead = prevEntry and estimateGap(prevEntry, e, trackLen) or nil
+      if gapAhead and gapAhead < 1.0 and r > 1 then
+        local bl = 0.55 + 0.45 * math.sin(pulse * 6)
+        ui.drawRect(vec2(0.5, ry + 0.5), vec2(W - 0.5, ry + rowH - 0.5), rgbm(1, 0.2, 0.25, bl), 1)
       end
 
-      -- POS
-      local posCol = r == 1 and draw.accent(cfg, 1) or draw.white(1)
+      -- POS (branco bold italic, P1 com fundo brand)
       if r == 1 then
-        ui.drawRectFilled(vec2(x + 14 * s, ry + 5 * s), vec2(x + 38 * s, ry + rowH - 5 * s), draw.accent(cfg, 1), 4 * s)
-        posCol = rgbm(0, 0, 0, 1)
+        ui.drawRectFilled(vec2(4 * s, ry), vec2(34 * s, ry + rowH), cfg.brand1)
+        draw.textF(draw.FONT_NUM, 4 * s, ry, tostring(e.pos), 16 * s, draw.WHITE, ui.Alignment.Center, 30 * s, rowH)
+      else
+        draw.textF(draw.FONT_NUM, 4 * s, ry, tostring(e.pos), 16 * s, draw.WHITE, ui.Alignment.Center, 30 * s, rowH)
       end
-      draw.text(x + 14 * s, ry + 1 * s, tostring(e.pos), 17 * s, posCol, ui.Alignment.Center, 24 * s, rowH - 2 * s)
 
-      -- Nome
-      local dname = '---'
+      -- Nome (condensado uppercase)
       local okN, nm = pcall(ac.getDriverName, e.idx)
-      if okN and nm and #tostring(nm) > 0 then dname = tostring(nm) end
-      draw.text(x + 44 * s, ry + 1 * s, draw.shortName(dname), 14.5 * s, draw.white(1), ui.Alignment.Start, 130 * s, rowH - 2 * s)
+      local dname = (okN and nm and #tostring(nm) > 0) and draw.fullName(nm, 16) or '---'
+      local nameCol = isFoc and draw.WHITE or draw.GRAY
+      draw.textF(draw.FONT_BOLD, 36 * s, ry, dname, 14 * s, nameCol, ui.Alignment.Start, 150 * s, rowH)
 
-      -- tyre dot
+      -- Tyre dot quadrado estilo TV
       if cfg.showTyre then
-        local comp = car.tyreCompound or car.compound or car.tyreShortName
+        local comp = car.tyreCompound or car.compound
         local tc = draw.tyreColor(comp)
-        ui.drawCircleFilled(vec2(x + 178 * s, ry + rowH * 0.5), 4.5 * s, tc, 10)
+        ui.drawRectFilled(vec2(188 * s, ry + 8 * s), vec2(196 * s, ry + rowH - 8 * s), tc)
       end
 
       -- Gap
       local gapStr = 'LEADER'
       if r > 1 then
+        local gl = estimateGap(leaderEntry, e, trackLen)
         if gapAhead and gapAhead <= 90 then gapStr = draw.fmtSec(gapAhead)
-        elseif gapLeader and gapLeader <= 90 then gapStr = draw.fmtSec(gapLeader)
+        elseif gl and gl <= 90 then gapStr = draw.fmtSec(gl)
         else gapStr = '+1 LAP' end
       end
-      local gapCol = isBattle and rgbm(1, 0.35, 0.5, 1) or draw.dim(1)
-      draw.text(x + W - 118 * s, ry + 1 * s, gapStr, 13.5 * s, gapCol, ui.Alignment.End, 100 * s, rowH - 2 * s)
-
+      draw.textF(draw.FONT_SEMI, 200 * s, ry, gapStr, 13 * s, draw.GRAY, ui.Alignment.End, 94 * s, rowH)
       prevEntry = e
     end
 
-    -- footer: focused
-    local okF, fname = pcall(ac.getDriverName, focused)
-    local flabel = 'FOCUS: ' .. draw.shortName(okF and fname or 'YOU')
-    draw.text(x + 12 * s, y + H - 22 * s, flabel, 11 * s, draw.accent(cfg, 1), ui.Alignment.Start, (W - 24 * s), 16 * s)
+    -- FOOTER: contagem (navy chapado)
+    local fy = headH + math.min(maxRows, #list) * rowH
+    ui.drawRectFilled(vec2(0, fy), vec2(W, fy + 22 * s), draw.NAVY)
+    draw.textF(draw.FONT_TXT, 8 * s, fy, tostring(#list) .. ' CARS', 11 * s, draw.WHITE, ui.Alignment.Start, 120 * s, 22 * s)
+    local okF, fn = pcall(ac.getDriverName, focused)
+    draw.textF(draw.FONT_TXT, 130 * s, fy, 'FOCUS P' .. tostring((ac.getCar(focused) or {}).racePosition or '-'), 11 * s, draw.GRAY, ui.Alignment.End, W - 138 * s, 22 * s)
   end)
-  if not ok then ac.debug('VS Tower', err) end
+  if not ok then ac.debug('ETV Tower', err) end
 end
 
 return M

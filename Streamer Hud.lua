@@ -1,7 +1,6 @@
 -- ========================================
--- VELOCITY SLASH // Streamer Hud.lua
--- Entry point (nome == pasta). Carrega 6 widgets + settings.
--- Design unico: Slash diagonal + glass + accent + LIVE
+-- ENDURO TV v2 // Streamer Hud.lua
+-- Entry point (nome == pasta). Broadcast solida IMSA/WEC/NLS.
 -- ========================================
 Dt = 0
 Time = 0
