@@ -7,6 +7,7 @@ local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
 local anim = require('core.anim')
+local sectors = require('core.sectors')
 
 local ac = ac
 local ui = ui
@@ -23,6 +24,7 @@ function M.update(dt)
   dt = dt or 0.016
   pulse = pulse + dt
   if pairAnim < 1 then pairAnim = math.min(1, pairAnim + dt * 3.5) end
+  sectors.update(dt)
 end
 function M.on_open() isVisible = true end
 function M.on_close() isVisible = false end
@@ -213,19 +215,26 @@ function M.main()
       draw.textF(draw.FONT_TXT, x + cw - 122 * k, y + topH + 28 * k, 'MELHOR VLT', 8.5 * k, draw.PHIL_GRAY, ui.Alignment.End, 114 * k, 12 * k)
       local sy = y + ch - 16 * k
       local segW = (cw - 16 * k) / 3
-      local sp = car.splinePosition or 0
-      local act = sp < 0.33 and 1 or (sp < 0.66 and 2 or 3)
+      -- setores LIVE (LapAlly): roxo overall, verde PB, amarelo resto
+      local cur = car.currentSplits or car.bestLapSplits
+      local pb = car.bestLapSplits
+      local curSec = car.currentSector or -1
       for kk = 1, 3 do
         local sx = x + 8 * k + (kk - 1) * segW
-        draw.textF(draw.FONT_TXT, sx, sy - 12 * k, 'S' .. kk, 9 * k, (kk == act) and draw.WHITE or draw.PHIL_GRAY, ui.Alignment.Center, segW, 12 * k)
-        ui.drawRectFilled(vec2(sx + 6 * k, sy + 2 * k), vec2(sx + segW - 6 * k, sy + 5 * k), (kk == act) and col or rgbm.from0255(60, 60, 80, 255))
+        local t = cur and cur[kk - 1] or nil
+        local done = curSec >= 0 and (kk - 1) < curSec and t and t > 0
+        local isCur = curSec == (kk - 1)
+        local scol = draw.sectorColor(t, sectors.best(kk), pb and pb[kk - 1] or nil)
+        if not done then scol = isCur and draw.WHITE or rgbm.from0255(90, 90, 110, 255) end
+        draw.textF(draw.FONT_TXT, sx, sy - 12 * k, 'S' .. kk, 9 * k, scol, ui.Alignment.Center, segW, 12 * k)
+        ui.drawRectFilled(vec2(sx + 6 * k, sy + 2 * k), vec2(sx + segW - 6 * k, sy + 5 * k),
+          isCur and draw.WHITE or (done and scol or rgbm.from0255(60, 60, 80, 255)))
       end
       ui.drawRect(vec2(x + 0.5, y + 0.5), vec2(x + cw - 0.5, y + ch - 0.5), col, 1.2)
     end
 
     drawCardK(slideX, 0, foc2, gapFoc)
     drawCardK(slideX + cw + gap, 0, rival, gapRiv)
-    _ = W; _ = H
   end)
   if not ok then ac.debug('PHIL Battle', err) end
 end

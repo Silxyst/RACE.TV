@@ -1,4 +1,15 @@
-# RACE TV v5 // bugs fora, motion + auto dentro
+# RACE TV v6 // todas as 9 sugestões
+1. **TYRE na tower**: modo TYRE mostra `M5·1S` (composto·idade·stops) + quadrado colorido; PIT mostra `P2`.
+2. **Som**: fastest/pb/flag-green com toggle (wavs CMRT em `assets/`).
+3. **Delta gráfico live** no Timing: barra móvel ±2s (LapAlly) + número + PREDICTED.
+4. **Setores live** no Battle: roxo overall / verde PB / amarelo (LapAlly).
+5. **TV Map** (240): centerline via `trackCoordinateToWorld` + dots (focado destacado, líder amarelo).
+6. **TV Lineup** (690x490): STARTING GRID automático, some após a largada.
+7. **Multiclasse auto**: agrupa por modelo, barra de cor por classe + filtro só-classe-do-focado.
+8. **Tecla tower**: `TV_TOWER_MODE` (mapear no CM) alterna AUTO/GAP/BEST/TYRE + radio em Settings.
+9. **Pit stops**: contador por piloto integrado na tower.
+
+Bugfix pós-update: `battle.lua` var residual, `alert.cfg` confirmado, tower `quali/mode` ordem, `splits` 0-based (WEC/LapAlly).
 Correções + inspiração FSH/CMRT/LapAlly/GT7/ACTV.
 
 ## Bugs corrigidos

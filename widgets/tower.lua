@@ -7,6 +7,9 @@ local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
 local anim = require('core.anim')
+local tyres = require('core.tyres')
+local pits = require('core.pits')
+local classes = require('core.classes')
 
 local ac = ac
 local ui = ui
@@ -21,12 +24,28 @@ local prevPos = {}
 local arrowT = {}
 local arrowDir = {}
 local dtCur = 0.016
+local modeBtn = nil
 
-function M.init() end
+local MODES = { 'AUTO', 'GAP', 'BEST', 'TYRE' }
+
+function M.init()
+  pcall(function() modeBtn = ac.ControlButton('TV_TOWER_MODE') end)
+end
 function M.update(dt)
   dt = dt or 0.016
   dtCur = dt
   pulse = pulse + dt
+  tyres.update()
+  pits.update()
+  classes.update()
+  if modeBtn then
+    local ok, pr = pcall(function() return modeBtn:pressed() end)
+    if ok and pr then
+      local cfg = config.get()
+      local nm = (cfg.towerMode or 1) % #MODES + 1
+      config.setTowerMode(nm)
+    end
+  end
 end
 function M.on_open() isVisible = true end
 function M.on_close() isVisible = false end
@@ -78,6 +97,22 @@ function M.main()
     table.sort(list, function(a, b) return a.pos < b.pos end)
     if #list == 0 then return end
 
+    -- filtro de classe (multiclasse auto): só a classe do focado
+    local focClass = classes.get(focused).name
+    if cfg.classFilter and classes.count() > 1 then
+      local sub = {}
+      for _, e in ipairs(list) do
+        if classes.get(e.idx).name == focClass then sub[#sub + 1] = e end
+      end
+      if #sub > 0 then list = sub end
+    end
+
+    -- modo da coluna direita: AUTO = quali BEST / corrida GAP
+    local quali = draw.isQualiLike(sim)
+    local mode = cfg.towerMode or 1
+    local showBest = (mode == 3) or (mode == 1 and quali)
+    local showTyre = (mode == 4)
+
     -- quantas linhas cabem na janela?
     local ws = ui.windowSize()
     local winW, winH = ws.x, ws.y
@@ -117,7 +152,6 @@ function M.main()
     end
     local n = #view
 
-    local quali = draw.isQualiLike(sim)
     local isCaution = sim.raceFlagType == ac.FlagType.Caution
 
     -- overall best (roxo ACTV/WEC)
@@ -178,6 +212,9 @@ function M.main()
         ui.drawRectFilled(vec2(0, ry), vec2(W, ry + rowH), draw.WHITE)
       else
         ui.drawRectFilled(vec2(0, ry), vec2(W, ry + rowH), (r % 2 == 0) and draw.PHIL_ROW2 or draw.PHIL_ROW)
+        -- barra de classe (multiclasse WEC)
+        local cc = classes.get(e.idx).color
+        ui.drawRectFilled(vec2(0, ry), vec2(3 * k, ry + rowH), cc)
       end
       local ink = white and draw.PHIL_BG or draw.WHITE
       local sub = white and rgbm.from0255(40, 40, 60, 255) or draw.PHIL_GRAY
@@ -216,12 +253,18 @@ function M.main()
       end
       if status then
         if status == 'PIT' then
-          ui.drawRectFilled(vec2(W - 30 * k, ry + 5 * k), vec2(W - 6 * k, ry + rowH - 5 * k), draw.RED)
-          draw.textF(draw.FONT_HEAD, W - 30 * k, ry, 'P', 12 * k, draw.WHITE, ui.Alignment.Center, 24 * k, rowH)
+          local st = pits.get(e.idx)
+          ui.drawRectFilled(vec2(W - 36 * k, ry + 5 * k), vec2(W - 6 * k, ry + rowH - 5 * k), draw.RED)
+          draw.textF(draw.FONT_HEAD, W - 36 * k, ry, st > 0 and ('P' .. st) or 'P', 11 * k, draw.WHITE, ui.Alignment.Center, 30 * k, rowH)
         else
           draw.textF(draw.FONT_SEMI, W - 66 * k, ry, 'OUT', 12 * k, sub, ui.Alignment.End, 60 * k, rowH)
         end
-      elseif quali then
+      elseif showTyre then
+        local letter, age = tyres.get(e.idx)
+        ui.drawRectFilled(vec2(W - 64 * k, ry + 7 * k), vec2(W - 54 * k, ry + rowH - 7 * k), draw.tyreColor(letter))
+        local st = pits.get(e.idx)
+        draw.textF(draw.FONT_SEMI, W - 52 * k, ry, letter .. age .. (st > 0 and '·' .. st .. 'S' or ''), 11.5 * k, sub, ui.Alignment.Start, 48 * k, rowH)
+      elseif showBest then
         local b = car.bestLapTimeMs or 0
         local bc = draw.sectorColor(b, sessBest, nil)
         if b <= 0 then bc = sub end
@@ -244,8 +287,10 @@ function M.main()
     -- ===== FOOTER =====
     local fy = logoH + clockH + n * rowH
     ui.drawRectFilled(vec2(0, fy), vec2(W, fy + footH), draw.PHIL_BLUE)
-    local ftxt = quali and ('BEST ' .. draw.fmtLap(sessBest or 0)) or 'MELHOR VOLTA'
+    local ftxt = showBest and ('BEST ' .. draw.fmtLap(sessBest or 0)) or 'MELHOR VOLTA'
+    if mode ~= 1 then ftxt = MODES[mode] .. '  •  ' .. ftxt end
     if pages > 1 then ftxt = ftxt .. '  •  ' .. tostring(page + 1) .. '/' .. tostring(pages) end
+    if cfg.classFilter and classes.count() > 1 then ftxt = focClass .. '  •  ' .. ftxt end
     draw.textF(draw.FONT_TXT, 0, fy, ftxt, 10.5 * k, draw.WHITE, ui.Alignment.Center, W, footH)
 
     ui.drawRect(vec2(0.5, 0.5), vec2(W - 0.5, H - 0.5), rgbm.from0255(90, 200, 255, 200), 1.5)

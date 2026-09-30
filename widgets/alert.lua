@@ -28,6 +28,14 @@ function M.update(dt)
   showT = showT + dt
   local sim = ac.getSim()
   if not sim then return end
+  local cfg = config.get()
+  local function beep(file)
+    if not cfg.sound then return end
+    pcall(function()
+      local a = ac.AudioEvent.fromFile({ filename = 'apps/lua/Streamer Hud/assets/' .. file, use3D = false, loop = false }, false)
+      if a then a:start() a:dispose() end
+    end)
+  end
   local function whoName(idx)
     local okN, nm = pcall(ac.getDriverName, idx)
     if okN and nm and #tostring(nm) > 0 then return draw.fullName(nm, 20) end
@@ -49,6 +57,7 @@ function M.update(dt)
       txt2 = whoName(who) .. '  ' .. draw.fmtLap(sb)
       col1 = rgbm.from0255(190, 90, 255, 255)
       showT = 0
+      beep('fastest.wav')
     end
     lastBest = sb
   end
@@ -63,6 +72,7 @@ function M.update(dt)
       txt2 = whoName(foc) .. '  ' .. draw.fmtLap(pb)
       col1 = rgbm.from0255(0, 210, 90, 255)
       showT = 0
+      beep('pb.wav')
     end
     if pb and pb > 0 then lastPB[foc] = pb end
   end
@@ -70,10 +80,10 @@ function M.update(dt)
   local f = sim.raceFlagType == ac.FlagType.Caution
   if f and not lastFlag then
     mode = 'flag' txt1 = 'YELLOW FLAG' txt2 = 'SLOW DOWN • NO OVERTAKING'
-    col1 = draw.YELLOW showT = 0
+    col1 = draw.YELLOW showT = 0 beep('green.wav')
   elseif not f and lastFlag then
     mode = 'green' txt1 = 'GREEN FLAG' txt2 = 'TRACK CLEAR • RACING'
-    col1 = draw.GREEN showT = 0
+    col1 = draw.GREEN showT = 0 beep('green.wav')
   end
   lastFlag = f
 end

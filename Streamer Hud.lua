@@ -16,6 +16,8 @@ local onboard    = require('widgets.onboard')
 local tags       = require('widgets.tags')
 local alert      = require('widgets.alert')
 local director   = require('widgets.director')
+local mapw       = require('widgets.map')
+local lineup     = require('widgets.lineup')
 local layout     = require('core.layout')
 local cfgmod     = require('core.config')
 
@@ -44,6 +46,8 @@ local function session_start(session_index, restarted)
   safe(tags.on_session_start)
   safe(alert.on_session_start)
   safe(director.on_session_start)
+  safe(mapw.on_session_start)
+  safe(lineup.on_session_start)
 end
 
 local function on_game_close()
@@ -71,6 +75,8 @@ function script.update(dt)
     safe(tags.init)
     safe(alert.init)
     safe(director.init)
+    safe(mapw.init)
+    safe(lineup.init)
   end
 
   if sim and sim.isOnlineRace then
@@ -91,6 +97,8 @@ function script.update(dt)
   safe(function() tags.update(Dt) end)
   safe(function() alert.update(Dt) end)
   safe(function() director.update(Dt) end)
+  safe(function() mapw.update(Dt) end)
+  safe(function() lineup.update(Dt) end)
   -- auto-layout uma vez por sessão (se ativado)
   if not M_layoutDone then
     local cfg = nil
@@ -138,6 +146,14 @@ function vsOnboardHide(dt) safe(onboard.on_close) end
 function vsAlertMain(dt) safe(alert.main) end
 function vsAlertShow(dt) safe(alert.on_open) end
 function vsAlertHide(dt) safe(alert.on_close) end
+
+function vsMapMain(dt) safe(mapw.main) end
+function vsMapShow(dt) safe(mapw.on_open) end
+function vsMapHide(dt) safe(mapw.on_close) end
+
+function vsLineupMain(dt) safe(lineup.main) end
+function vsLineupShow(dt) safe(lineup.on_open) end
+function vsLineupHide(dt) safe(lineup.on_close) end
 
 function vsSettingsMain(dt)
   safe(cfgmod.settingsUI)

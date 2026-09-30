@@ -76,18 +76,35 @@ function M.main()
       end
     end
 
-    -- barra last-vs-best
+    -- barra LIVE móvel ±2s (LapAlly deltabar)
     local dy = y0 + 96 * s
-    ui.drawRectFilled(vec2(8 * s, dy), vec2(W - 8 * s, dy + 12 * s), rgbm.from0255(40, 40, 52, 255))
-    ui.drawRectFilled(vec2(W / 2 - 1, dy - 2 * s), vec2(W / 2 + 1, dy + 14 * s), rgbm.from0255(130, 130, 150, 255))
-    if last and last > 0 and best and best > 0 then
+    local bx, bw, bh = 8 * s, W - 16 * s, 12 * s
+    ui.drawRectFilled(vec2(bx, dy), vec2(bx + bw, dy + bh), rgbm.from0255(40, 40, 52, 255))
+    -- dots de fundo
+    do
+      local step = bw / 8
+      local dd = bx + step
+      while dd < bx + bw - 1 do
+        ui.drawRectFilled(vec2(dd, dy + 2 * s), vec2(dd + 1, dy + bh - 2 * s), rgbm(1, 1, 1, 0.12))
+        dd = dd + step
+      end
+    end
+    local midX = bx + bw / 2
+    ui.drawRectFilled(vec2(midX - 1, dy - 2 * s), vec2(midX + 1, dy + bh + 2 * s), rgbm.from0255(200, 200, 215, 255))
+    if live and math.abs(live) < 60 then
+      local frac = draw.clamp(-live / 2, -1, 1)
+      local ex = midX + frac * (bw / 2)
+      local bcol = live <= 0 and rgbm.from0255(0, 210, 90, 255) or rgbm.from0255(225, 6, 0, 255)
+      if frac < 0 then ui.drawRectFilled(vec2(ex, dy), vec2(midX, dy + bh), bcol)
+      else ui.drawRectFilled(vec2(midX, dy), vec2(ex, dy + bh), bcol) end
+      draw.textF(draw.FONT_SEMI, W - 90 * s, dy - 4 * s, draw.fmtDeltaS(live), 11 * s, bcol, ui.Alignment.End, 82 * s, 20 * s)
+    elseif last and last > 0 and best and best > 0 then
       local d = (last - best) / 1000
       local norm = draw.clamp(d / 2, -1, 1)
-      local cx = W / 2
-      local ex = cx + (W / 2 - 10 * s) * norm
+      local ex = midX + norm * (bw / 2)
       local col = norm <= 0.05 and rgbm.from0255(0, 200, 80, 255) or rgbm.from0255(225, 6, 0, 255)
-      if norm < 0 then ui.drawRectFilled(vec2(ex, dy), vec2(cx, dy + 12 * s), col)
-      else ui.drawRectFilled(vec2(cx, dy), vec2(ex, dy + 12 * s), col) end
+      if norm < 0 then ui.drawRectFilled(vec2(ex, dy), vec2(midX, dy + bh), col)
+      else ui.drawRectFilled(vec2(midX, dy), vec2(ex, dy + bh), col) end
       draw.textF(draw.FONT_SEMI, W - 90 * s, dy - 4 * s, draw.fmtGap(last - best), 11 * s, col, ui.Alignment.End, 82 * s, 20 * s)
     end
   end)

@@ -20,6 +20,9 @@ local S = {
   autoBattle = stored('autoBattle', true),
   autoDirector = stored('autoDirector', false),
   autoLayout = stored('autoLayout', false),
+  towerMode = stored('towerMode', 1), -- 1 AUTO, 2 GAP, 3 BEST, 4 TYRE
+  classFilter = stored('classFilter', false),
+  sound = stored('sound', true),
 }
 
 local PRESETS = {
@@ -58,8 +61,13 @@ function M.get()
     autoBattle = S.autoBattle:get() ~= false,
     autoDirector = S.autoDirector:get() == true,
     autoLayout = S.autoLayout:get() == true,
+    towerMode = math.max(1, math.min(4, math.floor(S.towerMode:get() or 1))),
+    classFilter = S.classFilter:get() == true,
+    sound = S.sound:get() ~= false,
   }
 end
+
+function M.setTowerMode(m) S.towerMode:set(math.max(1, math.min(4, math.floor(m or 1)))) end
 
 function M.settingsUI()
   ui.text('ENDURO TV // Broadcast Settings')
@@ -87,6 +95,14 @@ function M.settingsUI()
   if ui.checkbox('Tags só ±1 posição (GT7 adjacency)', cfg.tagsAdjacent) then S.tagsAdjacent:set(not cfg.tagsAdjacent) end
   if ui.checkbox('Auto-batalha: Battle segue a briga mais próxima (<1.2s)', cfg.autoBattle) then S.autoBattle:set(not cfg.autoBattle) end
   if ui.checkbox('Auto-director: assistindo segue a briga (10s)', cfg.autoDirector) then S.autoDirector:set(not cfg.autoDirector) end
+  ui.separator()
+  ui.text('Tower: coluna direita (tecla TV_TOWER_MODE alterna em jogo)')
+  local modes = { 'AUTO (quali BEST, corrida GAP)', 'GAP', 'BEST', 'TYRE (composto·idade·stops)' }
+  for i, n in ipairs(modes) do
+    if ui.radioButton(n, cfg.towerMode == i) then S.towerMode:set(i) end
+  end
+  if ui.checkbox('Multiclasse: só a classe do focado', cfg.classFilter) then S.classFilter:set(not cfg.classFilter) end
+  if ui.checkbox('Som nos alertas (fastest/PB/flag)', cfg.sound) then S.sound:set(not cfg.sound) end
   ui.separator()
   ui.text('Posicionamento automático (16:9, proporcional):')
   if ui.button('Aplicar layout agora') then
