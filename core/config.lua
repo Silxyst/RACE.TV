@@ -17,6 +17,7 @@ local S = {
   series    = stored('series', 'RACE TV'),
   showTags  = stored('showTags', true),
   tagsAdjacent = stored('tagsAdjacent', false),
+  pedalTags = stored('pedalTags', true),
   autoBattle = stored('autoBattle', true),
   autoDirector = stored('autoDirector', false),
   autoLayout = stored('autoLayout', false),
@@ -58,6 +59,7 @@ function M.get()
     series = tostring(S.series:get() or 'RACE TV'),
     showTags = S.showTags:get() ~= false,
     tagsAdjacent = S.tagsAdjacent:get() == true,
+    pedalTags = S.pedalTags:get() ~= false,
     autoBattle = S.autoBattle:get() ~= false,
     autoDirector = S.autoDirector:get() == true,
     autoLayout = S.autoLayout:get() == true,
@@ -93,6 +95,7 @@ function M.settingsUI()
   if ui.checkbox('MPH (padrao KM/H)', cfg.mph) then S.mph:set(not cfg.mph) end
   if ui.checkbox('Tags acima dos carros (estilo PHIL TV)', cfg.showTags) then S.showTags:set(not cfg.showTags) end
   if ui.checkbox('Tags só ±1 posição (GT7 adjacency)', cfg.tagsAdjacent) then S.tagsAdjacent:set(not cfg.tagsAdjacent) end
+  if ui.checkbox('Pedais THR/BRK sob as tags 3D', cfg.pedalTags) then S.pedalTags:set(not cfg.pedalTags) end
   if ui.checkbox('Auto-batalha: Battle segue a briga mais próxima (<1.2s)', cfg.autoBattle) then S.autoBattle:set(not cfg.autoBattle) end
   if ui.checkbox('Auto-director: assistindo segue a briga (10s)', cfg.autoDirector) then S.autoDirector:set(not cfg.autoDirector) end
   ui.separator()

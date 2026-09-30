@@ -14,7 +14,7 @@ local math = math
 
 local registered = false
 local MAXD = 220
-local TAG_W, TAG_H = 1024, 140
+local TAG_W, TAG_H = 1024, 190
 local carVis = {}
 local nameCache = {}
 
@@ -114,6 +114,28 @@ local function tagDraw(car)
   ui.dwriteText(display, FS, rgbm(1, 1, 1, alpha))
   ui.endOutline(rgbm(0, 0, 0, 0.85 * alpha), 2)
   ui.popDWriteFont()
+
+  -- pedais progressivos sob a tag (THR verde / BRK vermelho)
+  -- player + IA animam; oponentes online podem não transmitir inputs (limite do AC)
+  if cfg.pedalTags then
+    local gas = draw.clamp(car.gas or 0, 0, 1)
+    local brk = draw.clamp(car.brake or 0, 0, 1)
+    local bw = totalW
+    local bx = cx - bw / 2
+    local by = y0 + totalH + 8
+    local bh = 10
+    -- THR
+    ui.drawRectFilled(vec2(bx, by), vec2(bx + bw, by + bh), rgbm(0, 0, 0, 0.62 * alpha))
+    if gas > 0.01 then
+      ui.drawRectFilled(vec2(bx, by), vec2(bx + bw * gas, by + bh), rgbm(0.15, 0.95, 0.35, alpha))
+    end
+    -- BRK
+    local by2 = by + bh + 4
+    ui.drawRectFilled(vec2(bx, by2), vec2(bx + bw, by2 + bh), rgbm(0, 0, 0, 0.62 * alpha))
+    if brk > 0.01 then
+      ui.drawRectFilled(vec2(bx, by2), vec2(bx + bw * brk, by2 + bh), rgbm(1, 0.15, 0.2, alpha))
+    end
+  end
 end
 
 function M.init() end

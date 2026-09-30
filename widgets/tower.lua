@@ -149,6 +149,14 @@ function M.main()
         local e = rest[page * perPage + i]
         if e then view[#view + 1] = e end
       end
+      -- fix: focado sempre visível (troca o último slot se preciso)
+      local seen = false
+      for _, e in ipairs(view) do if e.idx == focused then seen = true break end end
+      if not seen then
+        for _, e in ipairs(list) do
+          if e.idx == focused then view[#view] = e break end
+        end
+      end
     end
     local n = #view
 
