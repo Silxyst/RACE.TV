@@ -28,6 +28,11 @@ function M.update(dt)
   showT = showT + dt
   local sim = ac.getSim()
   if not sim then return end
+  local function whoName(idx)
+    local okN, nm = pcall(ac.getDriverName, idx)
+    if okN and nm and #tostring(nm) > 0 then return draw.fullName(nm, 20) end
+    return 'DRIVER'
+  end
   -- volta mais rápida da sessão
   local sb, who = nil, nil
   for i = 0, (sim.carsCount or 1) - 1 do
@@ -39,10 +44,9 @@ function M.update(dt)
   end
   if sb and sb > 0 and (not lastBest or sb < lastBest - 1) then
     if lastBest ~= nil then -- não dispara no load inicial
-      local okN, nm = pcall(ac.getDriverName, who)
       mode = 'best'
       txt1 = 'FASTEST LAP'
-      txt2 = draw.fullName((okN and nm) or 'DRIVER', 20) .. '  ' .. draw.fmtLap(sb)
+      txt2 = whoName(who) .. '  ' .. draw.fmtLap(sb)
       col1 = rgbm.from0255(190, 90, 255, 255)
       showT = 0
     end
@@ -54,10 +58,9 @@ function M.update(dt)
     local fc = ac.getCar(foc)
     local pb = fc and fc.bestLapTimeMs or 0
     if pb and pb > 0 and lastPB[foc] and pb < lastPB[foc] - 1 and pb ~= (sb or -1) then
-      local okN, nm = pcall(ac.getDriverName, foc)
       mode = 'pb'
       txt1 = 'PERSONAL BEST'
-      txt2 = draw.fullName((okN and nm) or 'DRIVER', 20) .. '  ' .. draw.fmtLap(pb)
+      txt2 = whoName(foc) .. '  ' .. draw.fmtLap(pb)
       col1 = rgbm.from0255(0, 210, 90, 255)
       showT = 0
     end
@@ -90,7 +93,7 @@ function M.main()
     local y = slide * k
     local cw = W * math.max(0.01, clip)
     ui.pushClipRect(vec2((W - cw) / 2, y), vec2((W + cw) / 2, y + H))
-    ui.drawRectFilled(vec2(0, y), vec2(W, y + H), rgbm(8, 8, 18, alpha))
+    ui.drawRectFilled(vec2(0, y), vec2(W, y + H), rgbm(0.03, 0.03, 0.07, alpha))
     ui.drawRectFilled(vec2(0, y), vec2(6 * k, y + H), rgbm(col1.r, col1.g, col1.b, alpha))
     draw.textF(draw.FONT_HEAD, 16 * k, y + 2 * k, txt1, 17 * k, rgbm(col1.r, col1.g, col1.b, alpha), ui.Alignment.Start, W - 32 * k, 24 * k)
     draw.textF(draw.FONT_TXT, 16 * k, y + 26 * k, txt2, 12 * k, rgbm(1, 1, 1, alpha), ui.Alignment.Start, W - 32 * k, 20 * k)
