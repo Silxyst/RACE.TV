@@ -11,10 +11,11 @@ end
 local S = {
   preset    = stored('preset', 1),      -- 1 Race Red, 2 Enduro Blue, 3 NLS Green
   scale     = stored('scale', 1.0),
-  towerRows = stored('towerRows', 12),
+  towerRows = stored('towerRows', 8),
   showTyre  = stored('showTyre', true),
   mph       = stored('mph', false),
-  series    = stored('series', 'ENDURO TV'),
+  series    = stored('series', 'RACE TV'),
+  showTags  = stored('showTags', true),
 }
 
 local PRESETS = {
@@ -47,7 +48,8 @@ function M.get()
     towerRows = rows,
     showTyre = S.showTyre:get() ~= false,
     mph = S.mph:get() == true,
-    series = tostring(S.series:get() or 'ENDURO TV'),
+    series = tostring(S.series:get() or 'RACE TV'),
+    showTags = S.showTags:get() ~= false,
   }
 end
 
@@ -73,6 +75,7 @@ function M.settingsUI()
   if nr ~= r then S.towerRows:set(math.floor(nr)) end
   if ui.checkbox('Tyre dot na Tower', cfg.showTyre) then S.showTyre:set(not cfg.showTyre) end
   if ui.checkbox('MPH (padrao KM/H)', cfg.mph) then S.mph:set(not cfg.mph) end
+  if ui.checkbox('Tags acima dos carros (estilo PHIL TV)', cfg.showTags) then S.showTags:set(not cfg.showTags) end
   ui.separator()
   ui.textWrapped('Posicione no Content Manager > Apps: Tower esquerda, Onboard inferior-esquerda, Timing topo-direita, Telemetry inferior-direita. Estilo chapado igual TV — sem transparencia.')
 end

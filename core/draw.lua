@@ -18,7 +18,7 @@ M.FONT_BOLD = 'fonts/Archivo-BoldItalic.ttf'
 M.FONT_SEMI = 'fonts/Archivo-SemiBoldItalic.ttf'
 M.FONT_TXT  = 'fonts/OpenSans-SemiBold.ttf'
 
--- Paleta broadcast real (WEC/IMSA/NLS)
+-- Paleta broadcast real (WEC/IMSA/NLS) + PHIL TV
 M.NAVY   = rgbm.from0255(15, 5, 60, 255)
 M.DARK   = rgbm.from0255(18, 18, 26, 255)
 M.DARK2  = rgbm.from0255(28, 28, 38, 255)
@@ -30,6 +30,56 @@ M.GREEN  = rgbm.from0255(0, 180, 50, 255)
 M.WHITE  = rgbm(1, 1, 1, 1)
 M.GRAY   = rgbm.from0255(200, 200, 208, 255)
 M.LIGHT  = rgbm.from0255(244, 244, 246, 255)
+-- PHIL TV: fundo quase preto + azul royal do timer + cards
+M.PHIL_BG    = rgbm.from0255(8, 8, 18, 255)
+M.PHIL_ROW   = rgbm.from0255(16, 16, 34, 255)
+M.PHIL_ROW2  = rgbm.from0255(22, 22, 42, 255)
+M.PHIL_BLUE  = rgbm.from0255(28, 55, 180, 255)
+M.PHIL_BLUE_D= rgbm.from0255(12, 22, 90, 255)
+M.LIME       = rgbm.from0255(57, 255, 20, 255)
+M.PHIL_YEL   = rgbm.from0255(255, 213, 0, 255)
+M.PHIL_GRAY  = rgbm.from0255(150, 155, 170, 255)
+
+-- Cor por piloto (faixa do card estilo PHIL: vermelho/verde/cinza/amarelo/azul)
+local DRIVER_COLORS = {
+  rgbm.from0255(225, 6, 0, 255),    -- red
+  rgbm.from0255(57, 255, 20, 255),  -- lime
+  rgbm.from0255(200, 205, 215, 255),-- silver
+  rgbm.from0255(255, 213, 0, 255),  -- yellow
+  rgbm.from0255(40, 110, 255, 255), -- blue
+  rgbm.from0255(255, 110, 0, 255),  -- orange
+}
+function M.driverColor(idx)
+  idx = math.abs(math.floor(tonumber(idx) or 0))
+  return DRIVER_COLORS[(idx % #DRIVER_COLORS) + 1]
+end
+function M.driverColorDark(idx)
+  return M.darken(M.driverColor(idx), 0.55)
+end
+
+-- ms -> "80:16:16" (H:MM:SS) estilo PHIL
+function M.fmtClock(ms)
+  if not ms or type(ms) ~= 'number' or ms < 0 then return '--:--:--' end
+  local total = math.floor(ms / 1000)
+  local h = math.floor(total / 3600)
+  local m = math.floor((total % 3600) / 60)
+  local s = total % 60
+  return string.format('%d:%02d:%02d', h, m, s)
+end
+
+function M.sessionClock(sim)
+  if not sim then return '--:--:--' end
+  local left = sim.sessionTimeLeft or 0
+  if left and left > 0 then return M.fmtClock(left) end
+  return M.fmtClock((sim.currentSessionTime or 0) * 1000)
+end
+
+function M.isQualiLike(sim)
+  local sess = sim and ac.getSession(sim.currentSessionIndex or 0)
+  local t = sess and sess.type
+  return t == ac.SessionType.Qualify or t == ac.SessionType.Practice
+      or t == ac.SessionType.Hotlap or t == ac.SessionType.TimeAttack
+end
 
 function M.clamp(v, a, b)
   if v < a then return a end

@@ -1,35 +1,24 @@
-# ENDURO TV // Streamer HUD v2
-Broadcast **sólida** estilo IMSA / WEC / NLS para live no OBS. Refeito do zero após feedback: sem glass, sem neon, sem slash — 100% TV.
+# RACE TV v3 // réplica PHIL TV
+Rework a partir dos prints do seu amigo: tower preta/azul, battle cards duplos, onboard topo, telemetry topo e tags.
 
-## O que mudou da v1 (Velocity Slash)
-- Removido: painéis glass arredondados, barra neon, corte diagonal, LIVE dot, canal obrigatório.
-- Novo: retângulos chapados com gradiente TV (cor cheia → 55% escuro), tipografia **Archivo Italic Bold** real (copiada da NLS), header com cor de bandeira (amarelo pisca em caution), linhas navy alternadas, tyre dot quadrado, overall best roxo ★, faixa ONBOARD navy + número gigante.
+## O que foi replicado do PHIL TV
+1. **Tower** (`widgets/tower.lua`): header preto com série gigante italic + barra azul royal com clock `H:MM:SS` (ou volta atual/total na corrida) + linhas navy + **P1 e focado em branco** + quadrado com inicial + PIT vermelho / OUT + quali mostra BEST, corrida mostra GAP + footer azul + borda cyan fina + header amarelo piscando em caution.
+2. **Battle cards** (`widgets/battle.lua` NOVO, janela `TV Battle` 660x130): 2 cards lado a lado do focado vs rival (à frente, ou atrás se P1). Faixa colorida por piloto + nome + navy com POS / volta atual ou gap amarelo + best + S1 S2 S3 com setor ativo pelo spline.
+3. **Onboard top** (`widgets/onboard.lua` NOVO, `TV Onboard Top` 490x60): `[POS navy] [NOME bar colorida + carro] ONBOARD` centralizado no topo, segue focado com slide.
+4. **Telemetry topo** (`widgets/speed.lua` refeito, `TV Telemetry` 480x72): barra preta com POS colorido + GEAR 1-6 com atual em branco + SPEED + RPM/MPH + barra RPM vermelha topo + barra verde base + `TELEMETRY`.
+5. **Tags** (`widgets/tags.lua` NOVO, sem janela): `ui.onDriverNameTag` com box navy `POS + NOME` + risca da cor do piloto, fade por distância 220m, toggle em Settings. Igual tags `ARTHUR SHELBY 5` do print.
+6. Mantidos e já no padrão sólido: Inputs, Timing, Onboard Bar, Spotter.
 
-## Módulos (renomeados, mesmas janelas)
-| Janela CM | Tamanho | Estilo |
-|---|---|---|
-| ETV Tower | 310x600 | Header serie+sessão/flag + linhas P/NOME/GAP + tyre square + focus bar + battle outline |
-| ETV Onboard Telemetry | 310x160 | Header ONBOARD+piloto + RPM top bar + GEAR gigante + SPEED + THR/BRK |
-| ETV Inputs | 310x140 | THR/BRK/STR sólidos pit-wall |
-| ETV Timing | 310x170 | CUR/LAST/BEST + delta bar sólida |
-| ETV Onboard Bar | 470x100 | Barra brand + POS gigante + nome + carro + faixa ONBOARD navy |
-| ETV Spotter | 200x220 | Box navy + anéis + dots (vermelho <8m) |
-| ETV Settings | — | Preset Race Red / Enduro Blue / NLS Green + sigla série + escala + linhas + tyre + MPH |
+## Cores por piloto
+Hash `idx % 6`: vermelho, lima, prata, amarelo, azul, laranja — igual cards do PHIL (P1 vermelho, P2 verde, P3 cinza...).
 
-Tudo segue `sim.focusedCar` (híbrido piloto/transmissão).
+## Posicionar (igual prints)
+- Tower esquerda topo | Telemetry topo centro | Onboard Top topo centro (abaixo telemetry ou alternar) | Battle centro inferior | Spotter/Inputs/Timing conforme gosto | Tags automáticas no mundo.
+- No CM ative: TV Tower, TV Battle, TV Onboard Top, TV Telemetry, TV Settings (+ opcionais).
 
-## Fontes
-`fonts/` com Archivo-ExtraBoldItalic / BoldItalic / SemiBoldItalic / OpenSans-SemiBold (das mesmas famílias usadas por WEC/IMSA/NLS). Uso via `ui.pushDWriteFont('fonts/...')` relativo ao app.
-
-## Cores
-- Navy #0F053C, Dark #12121A/#1C1C26, Race Red #E10600, Enduro Blue #006EFF, NLS Green #00B450, Yellow #FFD700, Green #00B432, Purple ★ #BE5AFF.
-
-## Instalar / posicionar
-1. CM > CSP > Apps > ative os 7 ETV.
-2. Posicione: Tower esquerda | Timing topo-direita | Telemetry inf-direita | Inputs inf-centro | Onboard Bar inf-esquerda | Spotter acima Telemetry.
-3. ETV Settings > preset + sigla (ex: IMSA, WEC, NLS).
-
-## Notas honestas
-- Gap estimado por spline (fallback CMRT). Mostra +1 LAP com volta de diferença.
-- Sem logos de marcas (evita asset pesado); número exibido = POS.
-- Sintaxe validada via lupa em 9 .lua.
+## Limites honestos
+- Sem logos de montadora (sem assets) — quadrado com inicial no lugar.
+- S1/S2/S3 por spline (terços da pista), não setores oficiais.
+- Gap estimado por spline (fallback CMRT).
+- Mapa da pista do canto (Spa/Watkins) não incluso — precisa de spline do traçado; próximo passo.
+- Starting grid splash P1-vs-P2 é overlay de pré-corrida do OBS do amigo, não do AC — replicável como cena do OBS, não como app.

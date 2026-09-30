@@ -1,6 +1,7 @@
 -- ========================================
--- ENDURO TV // widgets/tower.lua
--- Timing Tower solida estilo WEC/IMSA/NLS
+-- RACE TV v3 // widgets/tower.lua
+-- Replica PHIL TV: header preto + timer azul + linhas navy + P1/focus branco
+-- Quali mostra BEST, corrida mostra GAP. PIT/OUT + borda cyan.
 -- ========================================
 local M = {}
 local config = require('core.config')
@@ -49,11 +50,11 @@ function M.main()
   local ok, err = pcall(function()
     local cfg = config.get()
     local s = cfg.scale
-    local W = 300 * s
-    local headH = 30 * s
-    local rowH = 26 * s
-    local maxRows = cfg.towerRows or 12
-    local H = headH + maxRows * rowH + 22 * s
+    local W = 290 * s
+    local logoH, clockH, footH = 52 * s, 26 * s, 22 * s
+    local rowH = 27 * s
+    local maxRows = cfg.towerRows or 8
+    local n = 0
 
     local sim = ac.getSim()
     if not sim then return end
@@ -67,89 +68,117 @@ function M.main()
       end
     end
     table.sort(list, function(a, b) return a.pos < b.pos end)
+    n = math.min(maxRows, #list)
+    local H = logoH + clockH + n * rowH + footH
 
-    -- HEADER: serie + sessao, cor de bandeira se caution
-    local sessTxt = draw.sessionLabel(sim)
+    local quali = draw.isQualiLike(sim)
     local isCaution = sim.raceFlagType == ac.FlagType.Caution
-    local h1, h2, hTxt, hCol
+
+    -- ===== HEADER PHIL: bloco preto + SERIE gigante italic =====
+    ui.drawRectFilled(vec2(0, 0), vec2(W, logoH), draw.PHIL_BG)
+    draw.textF(draw.FONT_HEAD, 0, 2 * s, cfg.series or 'RACE TV', 30 * s, draw.WHITE, ui.Alignment.Center, W, 48 * s)
+
+    -- ===== TIMER azul royal =====
+    local clockTxt = draw.sessionClock(sim)
+    -- volta atual / total na corrida
+    local sess = ac.getSession(sim.currentSessionIndex or 0)
+    if not quali and sess and sess.laps and sess.laps > 0 then
+      local lead = list[1]
+      local lap = lead and (lead.car.lapCount or 0) or 0
+      clockTxt = tostring(lap) .. '/' .. tostring(sess.laps)
+    end
     if isCaution then
       local blink = math.floor(pulse * 1.5) % 2 == 0
-      hTxt = blink and 'YELLOW FLAG' or sessTxt
-      h1 = draw.YELLOW
-      h2 = draw.darken(draw.YELLOW, 0.65)
-      hCol = rgbm.from0255(15, 5, 50, 255)
+      ui.drawRectFilled(vec2(0, logoH), vec2(W, logoH + clockH), blink and draw.YELLOW or draw.PHIL_BLUE)
+      local tc = blink and rgbm.from0255(15, 5, 50, 255) or draw.WHITE
+      draw.textF(draw.FONT_HEAD, 0, logoH, blink and 'YELLOW FLAG' or clockTxt, 15 * s, tc, ui.Alignment.Center, W, clockH)
     else
-      hTxt = (cfg.series or 'ENDURO TV') .. '  •  ' .. sessTxt
-      h1 = cfg.brand1
-      h2 = cfg.brand2
-      hCol = draw.WHITE
+      ui.drawRectFilled(vec2(0, logoH), vec2(W, logoH + clockH), draw.PHIL_BLUE)
+      draw.textF(draw.FONT_HEAD, 0, logoH, clockTxt, 15 * s, draw.WHITE, ui.Alignment.Center, W, clockH)
     end
-    draw.solidBar(0, 0, W, headH, h1)
-    -- sombra gradiente inferior do header
-    ui.drawRectFilledMultiColor(vec2(0, 0), vec2(W, headH), h1, draw.darken(h1, 0.55), draw.darken(h1, 0.55), h1)
-    draw.textF(draw.FONT_HEAD, 8 * s, 1 * s, hTxt, 15 * s, hCol, ui.Alignment.Start, W - 16 * s, headH - 2 * s)
 
+    -- ===== LINHAS =====
     local leaderEntry = list[1]
     local prevEntry = nil
-    for r = 1, math.min(maxRows, #list) do
+    for r = 1, n do
       local e = list[r]
       local car = e.car
-      local ry = headH + (r - 1) * rowH
+      local ry = logoH + clockH + (r - 1) * rowH
       local isFoc = (e.idx == focused)
-      local alt = (r % 2 == 0)
+      local isP1 = (r == 1)
+      local white = isP1 or isFoc
 
-      draw.rowBg(0, ry, W, rowH, alt)
-      if isFoc then
-        ui.drawRectFilled(vec2(0, ry), vec2(4 * s, ry + rowH), cfg.brand1)
-      end
-      -- battle: borda fina vermelha
-      local gapAhead = prevEntry and estimateGap(prevEntry, e, trackLen) or nil
-      if gapAhead and gapAhead < 1.0 and r > 1 then
-        local bl = 0.55 + 0.45 * math.sin(pulse * 6)
-        ui.drawRect(vec2(0.5, ry + 0.5), vec2(W - 0.5, ry + rowH - 0.5), rgbm(1, 0.2, 0.25, bl), 1)
-      end
-
-      -- POS (branco bold italic, P1 com fundo brand)
-      if r == 1 then
-        ui.drawRectFilled(vec2(4 * s, ry), vec2(34 * s, ry + rowH), cfg.brand1)
-        draw.textF(draw.FONT_NUM, 4 * s, ry, tostring(e.pos), 16 * s, draw.WHITE, ui.Alignment.Center, 30 * s, rowH)
+      if white then
+        ui.drawRectFilled(vec2(0, ry), vec2(W, ry + rowH), draw.WHITE)
       else
-        draw.textF(draw.FONT_NUM, 4 * s, ry, tostring(e.pos), 16 * s, draw.WHITE, ui.Alignment.Center, 30 * s, rowH)
+        ui.drawRectFilled(vec2(0, ry), vec2(W, ry + rowH), (r % 2 == 0) and draw.PHIL_ROW2 or draw.PHIL_ROW)
       end
+      local ink = white and draw.PHIL_BG or draw.WHITE
+      local sub = white and rgbm.from0255(40, 40, 60, 255) or draw.PHIL_GRAY
 
-      -- Nome (condensado uppercase)
+      -- POS
+      draw.textF(draw.FONT_NUM, 6 * s, ry, tostring(e.pos), 15 * s, ink, ui.Alignment.Center, 22 * s, rowH)
+
+      -- quadrado marca (inicial da marca/carro, estilo logo box PHIL)
+      local okC, cn = pcall(ac.getCarName, e.idx)
+      local initial = '·'
+      if okC and cn and #tostring(cn) > 0 then initial = tostring(cn):sub(1, 1):upper() end
+      local boxC = white and draw.PHIL_BG or draw.driverColor(e.idx)
+      ui.drawRectFilled(vec2(30 * s, ry + 5 * s), vec2(48 * s, ry + rowH - 5 * s), boxC)
+      draw.textF(draw.FONT_HEAD, 30 * s, ry, initial, 12 * s, draw.WHITE, ui.Alignment.Center, 18 * s, rowH)
+
+      -- NOME
       local okN, nm = pcall(ac.getDriverName, e.idx)
-      local dname = (okN and nm and #tostring(nm) > 0) and draw.fullName(nm, 16) or '---'
-      local nameCol = isFoc and draw.WHITE or draw.GRAY
-      draw.textF(draw.FONT_BOLD, 36 * s, ry, dname, 14 * s, nameCol, ui.Alignment.Start, 150 * s, rowH)
-
-      -- Tyre dot quadrado estilo TV
-      if cfg.showTyre then
-        local comp = car.tyreCompound or car.compound
-        local tc = draw.tyreColor(comp)
-        ui.drawRectFilled(vec2(188 * s, ry + 8 * s), vec2(196 * s, ry + rowH - 8 * s), tc)
+      local dname = (okN and nm and #tostring(nm) > 0) and draw.fullName(nm, 17) or '---'
+      -- status PIT / OUT
+      local status = nil
+      if car.isInPit then
+        local spd = car.speedKmh or 0
+        status = (spd and spd < 5) and 'OUT' or 'PIT'
       end
+      local nameW = status and 128 * s or 158 * s
+      draw.textF(draw.FONT_BOLD, 52 * s, ry, dname, 13.5 * s, ink, ui.Alignment.Start, nameW, rowH)
 
-      -- Gap
-      local gapStr = 'LEADER'
-      if r > 1 then
-        local gl = estimateGap(leaderEntry, e, trackLen)
-        if gapAhead and gapAhead <= 90 then gapStr = draw.fmtSec(gapAhead)
-        elseif gl and gl <= 90 then gapStr = draw.fmtSec(gl)
-        else gapStr = '+1 LAP' end
+      -- direita: quali = BEST | corrida = GAP (ou PIT/OUT box)
+      if status then
+        if status == 'PIT' then
+          ui.drawRectFilled(vec2(W - 30 * s, ry + 5 * s), vec2(W - 6 * s, ry + rowH - 5 * s), draw.RED)
+          draw.textF(draw.FONT_HEAD, W - 30 * s, ry, 'P', 12 * s, draw.WHITE, ui.Alignment.Center, 24 * s, rowH)
+        else
+          draw.textF(draw.FONT_SEMI, W - 66 * s, ry, 'OUT', 12 * s, sub, ui.Alignment.End, 60 * s, rowH)
+        end
+      elseif quali then
+        local b = car.bestLapTimeMs or 0
+        draw.textF(draw.FONT_SEMI, W - 96 * s, ry, draw.fmtLap(b), 12.5 * s, sub, ui.Alignment.End, 90 * s, rowH)
+      else
+        local gapStr = 'LEADER'
+        if r > 1 then
+          local ga = prevEntry and estimateGap(prevEntry, e, trackLen) or nil
+          local gl = estimateGap(leaderEntry, e, trackLen)
+          if ga and ga <= 90 then gapStr = draw.fmtSec(ga)
+          elseif gl and gl <= 90 then gapStr = draw.fmtSec(gl)
+          else gapStr = '+1 LAP' end
+        end
+        draw.textF(draw.FONT_SEMI, W - 96 * s, ry, gapStr, 12.5 * s, sub, ui.Alignment.End, 90 * s, rowH)
       end
-      draw.textF(draw.FONT_SEMI, 200 * s, ry, gapStr, 13 * s, draw.GRAY, ui.Alignment.End, 94 * s, rowH)
       prevEntry = e
     end
 
-    -- FOOTER: contagem (navy chapado)
-    local fy = headH + math.min(maxRows, #list) * rowH
-    ui.drawRectFilled(vec2(0, fy), vec2(W, fy + 22 * s), draw.NAVY)
-    draw.textF(draw.FONT_TXT, 8 * s, fy, tostring(#list) .. ' CARS', 11 * s, draw.WHITE, ui.Alignment.Start, 120 * s, 22 * s)
-    local okF, fn = pcall(ac.getDriverName, focused)
-    draw.textF(draw.FONT_TXT, 130 * s, fy, 'FOCUS P' .. tostring((ac.getCar(focused) or {}).racePosition or '-'), 11 * s, draw.GRAY, ui.Alignment.End, W - 138 * s, 22 * s)
+    -- ===== FOOTER azul: MELHOR VOLTA / serie =====
+    local fy = logoH + clockH + n * rowH
+    ui.drawRectFilled(vec2(0, fy), vec2(W, fy + footH), draw.PHIL_BLUE)
+    local sessBest = nil
+    for _, e in ipairs(list) do
+      local b = e.car.bestLapTimeMs or 0
+      if b and b > 0 and (not sessBest or b < sessBest) then sessBest = b end
+    end
+    local ftxt = quali and ('BEST ' .. draw.fmtLap(sessBest or 0)) or 'MELHOR VOLTA'
+    draw.textF(draw.FONT_TXT, 0, fy, ftxt, 10.5 * s, draw.WHITE, ui.Alignment.Center, W, footH)
+
+    -- borda fina cyan estilo PHIL
+    ui.drawRect(vec2(0.5, 0.5), vec2(W - 0.5, H - 0.5), rgbm.from0255(90, 200, 255, 200), 1.5)
   end)
-  if not ok then ac.debug('ETV Tower', err) end
+  if not ok then ac.debug('PHIL Tower', err) end
 end
 
 return M

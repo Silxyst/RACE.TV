@@ -1,6 +1,6 @@
 -- ========================================
--- ENDURO TV // widgets/speed.lua
--- Onboard telemetry solida (gear/speed/thr/brk/rpm)
+-- RACE TV v3 // widgets/speed.lua
+-- Replica PHIL telemetry topo: [NUM] GEAR 1-6 | SPEED | RPM bars
 -- ========================================
 local M = {}
 local config = require('core.config')
@@ -13,79 +13,83 @@ local rgbm = rgbm
 local math = math
 
 local isVisible = false
-local pulse = 0
 function M.init() end
-function M.update(dt) pulse = pulse + (dt or 0.016) end
+function M.update(dt) end
 function M.on_open() isVisible = true end
 function M.on_close() isVisible = false end
 function M.on_session_start() end
-
-local function gearStr(g)
-  if g == 0 then return 'N' end
-  if g == -1 then return 'R' end
-  return tostring(g or '-')
-end
 
 function M.main()
   if not isVisible then return end
   local ok, err = pcall(function()
     local cfg = config.get()
-    local s = cfg.scale
-    local W, H = 300 * s, 150 * s
-    local headH = 24 * s
+    local k = cfg.scale
+    local W, H = 470 * k, 64 * k
 
     local sim = ac.getSim()
     local foc = (sim and sim.focusedCar) or 0
     local car = ac.getCar(foc)
     if not car then return end
 
-    -- header brand
-    ui.drawRectFilledMultiColor(vec2(0, 0), vec2(W, headH), cfg.brand1, draw.darken(cfg.brand1, 0.55), draw.darken(cfg.brand1, 0.55), cfg.brand1)
-    local okN, nm = pcall(ac.getDriverName, foc)
-    local who = (foc == 0) and 'YOU' or draw.shortName(okN and nm or 'DRIVER')
-    draw.textF(draw.FONT_HEAD, 8 * s, 0, 'ONBOARD  •  ' .. who, 13 * s, draw.WHITE, ui.Alignment.Start, W - 16 * s, headH)
-
-    -- corpo navy
-    ui.drawRectFilled(vec2(0, headH), vec2(W, H), draw.DARK)
+    ui.drawRectFilled(vec2(0, 0), vec2(W, H), rgbm.from0255(5, 5, 10, 255))
 
     local kmh = car.speedKmh or 0
-    if cfg.mph then kmh = kmh * 0.621371 end
+    local mph = kmh * 0.621371
     local rpm = car.rpm or 0
     local lim = car.rpmLimiter or 0
     if type(lim) ~= 'number' or lim < 1000 then lim = 7500 end
     local frac = draw.clamp(rpm / lim, 0, 1)
+    local gear = car.gear or 0
+    local pos = tostring(car.racePosition or '-')
+    local col = draw.driverColor(foc)
 
-    -- RPM top bar fina
-    ui.drawRectFilled(vec2(0, headH), vec2(W, headH + 5 * s), rgbm.from0255(50, 50, 60, 255))
-    ui.drawRectFilled(vec2(0, headH), vec2(W * frac, headH + 5 * s), frac > 0.92 and rgbm.from0255(225, 6, 0, 255) or draw.WHITE)
-    if frac > 0.92 then
-      local bl = 0.5 + 0.5 * math.sin(pulse * 16)
-      ui.drawRect(vec2(0.5, headH + 0.5), vec2(W - 0.5, H - 0.5), rgbm(1, 0.1, 0.1, bl), 2)
+    -- RPM barra vermelha topo
+    ui.drawRectFilled(vec2(0, 0), vec2(W, 5 * k), rgbm.from0255(40, 40, 55, 255))
+    ui.drawRectFilled(vec2(0, 0), vec2(W * frac, 5 * k), rgbm.from0255(225, 6, 0, 255))
+
+    -- NUM pos (amarelo/vermelho estilo PHIL)
+    local lum = 0.299 * col.r + 0.587 * col.g + 0.114 * col.b
+    local numCol = lum > 0.65 and col or draw.PHIL_YEL
+    if foc == 0 then numCol = draw.PHIL_YEL end
+    draw.textF(draw.FONT_NUM, 6 * k, 6 * k, pos, 34 * k, numCol, ui.Alignment.Center, 52 * k, 40 * k)
+
+    -- GEARS 1..6 centro
+    draw.textF(draw.FONT_TXT, 62 * k, 8 * k, 'GEAR', 9 * k, draw.PHIL_GRAY, ui.Alignment.Start, 40 * k, 12 * k)
+    local gx = 62 * k
+    for g = 1, 6 do
+      local gw = 26 * k
+      local active = (gear == g)
+      if active then
+        ui.drawRectFilled(vec2(gx, 22 * k), vec2(gx + gw, 46 * k), draw.WHITE)
+        draw.textF(draw.FONT_NUM, gx, 22 * k, tostring(g), 20 * k, draw.PHIL_BG, ui.Alignment.Center, gw, 24 * k)
+      else
+        draw.textF(draw.FONT_SEMI, gx, 22 * k, tostring(g), 17 * k, rgbm.from0255(130, 135, 155, 255), ui.Alignment.Center, gw, 24 * k)
+      end
+      gx = gx + gw + 2 * k
+    end
+    if gear == 0 then
+      draw.textF(draw.FONT_NUM, gx + 4 * k, 22 * k, 'N', 20 * k, draw.PHIL_YEL, ui.Alignment.Start, 30 * k, 24 * k)
+    elseif gear == -1 then
+      draw.textF(draw.FONT_NUM, gx + 4 * k, 22 * k, 'R', 20 * k, draw.PHIL_YEL, ui.Alignment.Start, 30 * k, 24 * k)
     end
 
-    -- GEAR (esq, gigante)
-    draw.textF(draw.FONT_NUM, 8 * s, headH + 12 * s, gearStr(car.gear), 64 * s, draw.WHITE, ui.Alignment.Center, 90 * s, 80 * s)
-    -- divisor
-    ui.drawRectFilled(vec2(102 * s, headH + 14 * s), vec2(104 * s, H - 34 * s), rgbm.from0255(70, 70, 85, 255))
+    -- SPEED direita
+    local spd = cfg.mph and mph or kmh
+    draw.textF(draw.FONT_NUM, W - 170 * k, 8 * k, string.format('%.0f', spd), 32 * k, draw.WHITE, ui.Alignment.End, 110 * k, 34 * k)
+    draw.textF(draw.FONT_TXT, W - 170 * k, 40 * k, cfg.mph and 'MPH' or 'KM/H', 9 * k, draw.PHIL_GRAY, ui.Alignment.End, 110 * k, 12 * k)
+    draw.textF(draw.FONT_TXT, W - 58 * k, 8 * k, string.format('%.0f RPM', rpm), 10 * k, draw.WHITE, ui.Alignment.Start, 52 * k, 14 * k)
+    draw.textF(draw.FONT_TXT, W - 58 * k, 22 * k, string.format('%.0f MPH', mph), 9 * k, draw.PHIL_GRAY, ui.Alignment.Start, 52 * k, 12 * k)
 
-    -- SPEED
-    draw.textF(draw.FONT_NUM, 112 * s, headH + 12 * s, string.format('%.0f', kmh), 52 * s, draw.WHITE, ui.Alignment.Start, 170 * s, 60 * s)
-    draw.textF(draw.FONT_TXT, 114 * s, headH + 66 * s, (cfg.mph and 'MPH' or 'KM/H') .. '  •  ' .. string.format('%.0f', rpm) .. ' RPM', 11 * s, draw.GRAY, ui.Alignment.Start, 180 * s, 16 * s)
+    -- barra verde base (thr) estilo PHIL
+    local thr = 0
+    if foc == 0 then thr = draw.clamp(car.gas or 0, 0, 1) end
+    ui.drawRectFilled(vec2(60 * k, H - 8 * k), vec2(W - 6 * k, H - 4 * k), rgbm.from0255(30, 30, 45, 255))
+    ui.drawRectFilled(vec2(60 * k, H - 8 * k), vec2(60 * k + (W - 66 * k) * (foc == 0 and thr or frac), H - 4 * k), rgbm.from0255(57, 255, 20, 255))
 
-    -- THR / BRK barras finas base
-    local thr = draw.clamp(car.gas or 0, 0, 1)
-    local brk = draw.clamp(car.brake or 0, 0, 1)
-    local by = H - 26 * s
-    -- THR
-    draw.textF(draw.FONT_TXT, 8 * s, by, 'T', 11 * s, draw.GRAY, ui.Alignment.Center, 14 * s, 14 * s)
-    ui.drawRectFilled(vec2(24 * s, by + 2 * s), vec2(24 * s + 120 * s, by + 12 * s), rgbm.from0255(40, 40, 52, 255))
-    ui.drawRectFilled(vec2(24 * s, by + 2 * s), vec2(24 * s + 120 * s * thr, by + 12 * s), rgbm.from0255(0, 200, 80, 255))
-    -- BRK
-    draw.textF(draw.FONT_TXT, 152 * s, by, 'B', 11 * s, draw.GRAY, ui.Alignment.Center, 14 * s, 14 * s)
-    ui.drawRectFilled(vec2(168 * s, by + 2 * s), vec2(168 * s + 120 * s, by + 12 * s), rgbm.from0255(40, 40, 52, 255))
-    ui.drawRectFilled(vec2(168 * s, by + 2 * s), vec2(168 * s + 120 * s * brk, by + 12 * s), rgbm.from0255(225, 6, 0, 255))
+    draw.textF(draw.FONT_TXT, W - 58 * k, H - 20 * k, 'TELEMETRY', 9 * k, draw.WHITE, ui.Alignment.Start, 52 * k, 12 * k)
+    ui.drawRect(vec2(0.5, 0.5), vec2(W - 0.5, H - 0.5), rgbm.from0255(70, 70, 95, 255), 1)
   end)
-  if not ok then ac.debug('ETV Speed', err) end
+  if not ok then ac.debug('PHIL Tele', err) end
 end
 
 return M

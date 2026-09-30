@@ -1,6 +1,6 @@
 -- ========================================
--- ENDURO TV v2 // Streamer Hud.lua
--- Entry point (nome == pasta). Broadcast solida IMSA/WEC/NLS.
+-- RACE TV v3 // Streamer Hud.lua
+-- Replica PHIL TV: tower + battle + onboard + telemetry + tags
 -- ========================================
 Dt = 0
 Time = 0
@@ -11,6 +11,9 @@ local pedals     = require('widgets.pedals')
 local lap        = require('widgets.lap')
 local lowerthird = require('widgets.lowerthird')
 local radar      = require('widgets.radar')
+local battle     = require('widgets.battle')
+local onboard    = require('widgets.onboard')
+local tags       = require('widgets.tags')
 local cfgmod     = require('core.config')
 
 local init = false
@@ -19,7 +22,7 @@ local err_count = 1
 
 local function safe(fn)
   xpcall(fn, function(err)
-    ac.debug('VS ERROR ' .. tostring(err_count), tostring(err) .. '\n' .. debug.traceback())
+    ac.debug('TV ERROR ' .. tostring(err_count), tostring(err) .. '\n' .. debug.traceback())
     err_count = err_count + 1
   end)
 end
@@ -31,6 +34,9 @@ local function session_start(session_index, restarted)
   safe(lap.on_session_start)
   safe(lowerthird.on_session_start)
   safe(radar.on_session_start)
+  safe(battle.on_session_start)
+  safe(onboard.on_session_start)
+  safe(tags.on_session_start)
 end
 
 local function on_game_close()
@@ -53,9 +59,11 @@ function script.update(dt)
     safe(lap.init)
     safe(lowerthird.init)
     safe(radar.init)
+    safe(battle.init)
+    safe(onboard.init)
+    safe(tags.init)
   end
 
-  -- fallback online restart
   if sim and sim.isOnlineRace then
     if sim.currentSessionTime and sim.currentSessionTime < session_time then
       session_start(-1, -1)
@@ -69,6 +77,9 @@ function script.update(dt)
   safe(function() lap.update(Dt) end)
   safe(function() lowerthird.update(Dt) end)
   safe(function() radar.update(Dt) end)
+  safe(function() battle.update(Dt) end)
+  safe(function() onboard.update(Dt) end)
+  safe(function() tags.update(Dt) end)
 end
 
 -- ====== WINDOWS (nomes batem com manifest.ini) ======
@@ -95,6 +106,14 @@ function vsLowerHide(dt) safe(lowerthird.on_close) end
 function vsRadarMain(dt) safe(radar.main) end
 function vsRadarShow(dt) safe(radar.on_open) end
 function vsRadarHide(dt) safe(radar.on_close) end
+
+function vsBattleMain(dt) safe(battle.main) end
+function vsBattleShow(dt) safe(battle.on_open) end
+function vsBattleHide(dt) safe(battle.on_close) end
+
+function vsOnboardMain(dt) safe(onboard.main) end
+function vsOnboardShow(dt) safe(onboard.on_open) end
+function vsOnboardHide(dt) safe(onboard.on_close) end
 
 function vsSettingsMain(dt)
   safe(cfgmod.settingsUI)
