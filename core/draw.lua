@@ -87,6 +87,49 @@ function M.clamp(v, a, b)
   return v
 end
 
+-- FSH-style: encaixa conteúdo na JANELA real (corrige bug de escala).
+-- baseW/baseH = tamanho de referência em escala 1. Retorna k.
+function M.fit(cfgScale, baseW, baseH)
+  local k = cfgScale or 1
+  local ok, ws = pcall(ui.windowSize)
+  if ok and ws and ws.x > 10 and ws.y > 10 then
+    k = math.min(k, ws.x / baseW, ws.y / baseH)
+  end
+  return math.max(0.35, k)
+end
+
+function M.smoothstep(a, b, x)
+  if a == b then return x >= b and 1 or 0 end
+  x = M.clamp((x - a) / (b - a), 0, 1)
+  return x * x * (3 - 2 * x)
+end
+
+function M.moveTowards(cur, tgt, d)
+  if cur < tgt then return math.min(cur + d, tgt) end
+  return math.max(cur - d, tgt)
+end
+
+-- Cor de setor/volta estilo LapAlly/ACTV: roxo overall, verde PB, amarelo resto
+function M.sectorColor(t, overallBest, personalBest)
+  if not t or t <= 0 then return rgbm.from0255(150, 150, 160, 255) end
+  if overallBest and overallBest > 0 and t <= overallBest + 0.001 then
+    return rgbm.from0255(190, 90, 255, 255)
+  end
+  if personalBest and personalBest > 0 and t <= personalBest + 0.001 then
+    return rgbm.from0255(0, 210, 90, 255)
+  end
+  return rgbm.from0255(255, 200, 40, 255)
+end
+
+-- Delta LapAlly: "+1.234" adaptativo
+function M.fmtDeltaS(sec)
+  if not sec or type(sec) ~= 'number' then return '---' end
+  local a = math.abs(sec)
+  if a > 100 then return string.format('%+.0f', sec)
+  elseif a > 10 then return string.format('%+.1f', sec)
+  else return string.format('%+.3f', sec) end
+end
+
 function M.darken(c, k)
   return rgbm(c.r * k, c.g * k, c.b * k, 1)
 end

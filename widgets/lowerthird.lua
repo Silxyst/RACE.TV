@@ -33,7 +33,7 @@ function M.main()
   if not isVisible then return end
   local ok, err = pcall(function()
     local cfg = config.get()
-    local s = cfg.scale
+    local s = draw.fit(cfg.scale, 460, 92)
     local W, H = 460 * s, 92 * s
     local stripH = 20 * s
     -- slide
@@ -58,10 +58,12 @@ function M.main()
     if #carName > 30 then carName = carName:sub(1, 30) end
     local pos = tostring(car.racePosition or '-')
     local best = draw.fmtLap(car.bestLapTimeMs or 0)
+    local col = draw.driverColor(foc)
 
-    -- barra principal brand gradient
+    -- barra principal navy PHIL + faixa piloto
     local bh = H - stripH
-    ui.drawRectFilledMultiColor(vec2(x, y), vec2(x + W, y + bh), cfg.brand1, draw.darken(cfg.brand1, 0.55), draw.darken(cfg.brand1, 0.55), cfg.brand1)
+    ui.drawRectFilled(vec2(x, y), vec2(x + W, y + bh), draw.PHIL_BG)
+    ui.drawRectFilled(vec2(x, y), vec2(x + 6 * s, y + bh), col)
 
     -- numero POS (esq, gigante italic)
     draw.textF(draw.FONT_NUM, x + 10 * s, y - 2 * s, pos, 52 * s, draw.WHITE, ui.Alignment.Start, 80 * s, bh)

@@ -31,7 +31,7 @@ function M.main()
   if not isVisible then return end
   local ok, err = pcall(function()
     local cfg = config.get()
-    local k = cfg.scale
+    local k = draw.fit(cfg.scale, 480, 52)
     local W, H = 480 * k, 52 * k
     local slide = (1 - anim) * -18 * k
     local x, y = slide, 0

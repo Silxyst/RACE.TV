@@ -15,6 +15,7 @@ local battle     = require('widgets.battle')
 local onboard    = require('widgets.onboard')
 local tags       = require('widgets.tags')
 local alert      = require('widgets.alert')
+local director   = require('widgets.director')
 local layout     = require('core.layout')
 local cfgmod     = require('core.config')
 
@@ -42,6 +43,7 @@ local function session_start(session_index, restarted)
   safe(onboard.on_session_start)
   safe(tags.on_session_start)
   safe(alert.on_session_start)
+  safe(director.on_session_start)
 end
 
 local function on_game_close()
@@ -68,6 +70,7 @@ function script.update(dt)
     safe(onboard.init)
     safe(tags.init)
     safe(alert.init)
+    safe(director.init)
   end
 
   if sim and sim.isOnlineRace then
@@ -87,6 +90,7 @@ function script.update(dt)
   safe(function() onboard.update(Dt) end)
   safe(function() tags.update(Dt) end)
   safe(function() alert.update(Dt) end)
+  safe(function() director.update(Dt) end)
   -- auto-layout uma vez por sessão (se ativado)
   if not M_layoutDone then
     local cfg = nil

@@ -22,7 +22,7 @@ function M.main()
   if not isVisible then return end
   local ok, err = pcall(function()
     local cfg = config.get()
-    local s = cfg.scale
+    local s = draw.fit(cfg.scale, 300, 132)
     local W, H = 300 * s, 132 * s
     local headH = 24 * s
 

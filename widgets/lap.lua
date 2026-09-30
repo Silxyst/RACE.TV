@@ -22,8 +22,8 @@ function M.main()
   if not isVisible then return end
   local ok, err = pcall(function()
     local cfg = config.get()
-    local s = cfg.scale
-    local W, H = 300 * s, 158 * s
+    local s = draw.fit(cfg.scale, 300, 150)
+    local W, H = 300 * s, 150 * s
     local headH = 24 * s
 
     ui.drawRectFilledMultiColor(vec2(0, 0), vec2(W, headH), cfg.brand1, draw.darken(cfg.brand1, 0.55), draw.darken(cfg.brand1, 0.55), cfg.brand1)
@@ -62,8 +62,22 @@ function M.main()
     local bcol = isOverall and rgbm.from0255(190, 90, 255, 255) or draw.WHITE
     draw.textF(draw.FONT_SEMI, 56 * s, y0 + 50 * s, draw.fmtLap(best) .. (isOverall and '  ★' or ''), 16 * s, bcol, ui.Alignment.Start, 236 * s, 22 * s)
 
-    -- delta bar solida
-    local dy = y0 + 76 * s
+    -- DELTA LIVE LapAlly (performanceMeter nativo) + PREDICTED
+    local live = car.performanceMeter -- segundos, negativo = mais rápido
+    local ly = y0 + 74 * s
+    if live and math.abs(live) < 60 then
+      local dcol = live <= 0 and rgbm.from0255(0, 210, 90, 255) or rgbm.from0255(225, 6, 0, 255)
+      draw.textF(draw.FONT_TXT, 8 * s, ly, 'LIVE', 11 * s, draw.GRAY, ui.Alignment.Start, 44 * s, 20 * s)
+      draw.textF(draw.FONT_NUM, 56 * s, ly - 2 * s, draw.fmtDeltaS(live), 19 * s, dcol, ui.Alignment.Start, 120 * s, 24 * s)
+      if best and best > 0 then
+        local pred = best + live * 1000
+        local pcol = pred < best and rgbm.from0255(0, 210, 90, 255) or draw.GRAY
+        draw.textF(draw.FONT_SEMI, 180 * s, ly, 'PRED ' .. draw.fmtLap(pred), 11 * s, pcol, ui.Alignment.Start, 112 * s, 20 * s)
+      end
+    end
+
+    -- barra last-vs-best
+    local dy = y0 + 96 * s
     ui.drawRectFilled(vec2(8 * s, dy), vec2(W - 8 * s, dy + 12 * s), rgbm.from0255(40, 40, 52, 255))
     ui.drawRectFilled(vec2(W / 2 - 1, dy - 2 * s), vec2(W / 2 + 1, dy + 14 * s), rgbm.from0255(130, 130, 150, 255))
     if last and last > 0 and best and best > 0 then

@@ -15,11 +15,12 @@ local rgbm = rgbm
 
 local isVisible = false
 local showT = 99
-local mode = nil -- 'best' | 'flag'
+local mode = nil -- 'best' | 'pb' | 'flag' | 'green'
 local txt1, txt2 = '', ''
 local col1 = draw.WHITE
 local lastBest = nil
 local lastFlag = nil
+local lastPB = {}
 
 function M.init() end
 function M.update(dt)
@@ -47,24 +48,42 @@ function M.update(dt)
     end
     lastBest = sb
   end
-  -- flag amarela
+  -- personal best do focado (verde LapAlly)
+  do
+    local foc = sim.focusedCar or 0
+    local fc = ac.getCar(foc)
+    local pb = fc and fc.bestLapTimeMs or 0
+    if pb and pb > 0 and lastPB[foc] and pb < lastPB[foc] - 1 and pb ~= (sb or -1) then
+      local okN, nm = pcall(ac.getDriverName, foc)
+      mode = 'pb'
+      txt1 = 'PERSONAL BEST'
+      txt2 = draw.fullName((okN and nm) or 'DRIVER', 20) .. '  ' .. draw.fmtLap(pb)
+      col1 = rgbm.from0255(0, 210, 90, 255)
+      showT = 0
+    end
+    if pb and pb > 0 then lastPB[foc] = pb end
+  end
+  -- flag amarela / verde
   local f = sim.raceFlagType == ac.FlagType.Caution
   if f and not lastFlag then
-    mode = 'flag' txt1 = 'YELLOW FLAG' txt2 = 'TRACK LIMITS • SLOW DOWN'
+    mode = 'flag' txt1 = 'YELLOW FLAG' txt2 = 'SLOW DOWN • NO OVERTAKING'
     col1 = draw.YELLOW showT = 0
+  elseif not f and lastFlag then
+    mode = 'green' txt1 = 'GREEN FLAG' txt2 = 'TRACK CLEAR • RACING'
+    col1 = draw.GREEN showT = 0
   end
   lastFlag = f
 end
 function M.on_open() isVisible = true end
 function M.on_close() isVisible = false end
-function M.on_session_start() showT = 99 lastBest = nil lastFlag = nil end
+function M.on_session_start() showT = 99 lastBest = nil lastFlag = nil lastPB = {} end
 
 function M.main()
   if not isVisible then return end
   if showT > 6 then return end
   local ok, err = pcall(function()
     local cfg = config.get()
-    local k = cfg.scale
+    local k = draw.fit(cfg.scale, 460, 56)
     local W, H = 460 * k, 56 * k
     local clip, alpha, slide = anim.popup(showT, 5, 0.3, 0.3)
     if alpha <= 0.01 then return end

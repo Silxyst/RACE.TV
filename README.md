@@ -1,4 +1,22 @@
-# RACE TV v4 // motion + auto (réplica PHIL TV)
+# RACE TV v5 // bugs fora, motion + auto dentro
+Correções + inspiração FSH/CMRT/LapAlly/GT7/ACTV.
+
+## Bugs corrigidos
+- **Tower escala**: conteúdo agora encaixa na janela real (`draw.fit` estilo FSH `SCALE`+`POS_X/Y`) — sem mais corte com escala 1.6 ou 20 linhas. Vale para TODOS os widgets.
+- **Overlap nome/gap** na tower: região do nome com clip.
+- Tower mostra `P1` por posição real (não por ordem de linha) e scroll por páginas indica `1/2`.
+
+## Mais animação
+- Tower: setas ▲▼ 5s (Turismos), roxo overall-best (ACTV/WEC), barra de progresso da sessão, scroll de páginas 8s (WEC/NLS).
+- Battle: reveal ao trocar de par.
+- Tags GT7: fade smoothstep + outline + 3-box pos/flag/nome.
+- Alert: + PERSONAL BEST verde e GREEN FLAG.
+
+## Mais automático
+- Tower alterna BEST (quali) / GAP (corrida) sozinha; scroll sozinho com grid grande.
+- **Auto-director** (toggle, default off): assistindo, segue a briga <1.5s com dwell 10s. Nunca mexe pilotando.
+- Timing: **delta live + predicted** via `performanceMeter` nativo (LapAlly).
+- Tags: modo adjacency GT7 opcional.
 Tower animada + auto-director de batalhas + alerta automático + auto-layout 16:9. Técnicas do CMRT-Broadcast-HUD em `lua-off`.
 
 ## Novidades v4

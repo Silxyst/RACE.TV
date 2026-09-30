@@ -6,6 +6,7 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local anim = require('core.anim')
 
 local ac = ac
 local ui = ui
@@ -15,11 +16,17 @@ local math = math
 
 local isVisible = false
 local pulse = 0
+local pairKey = nil
+local pairAnim = 1
 function M.init() end
-function M.update(dt) pulse = pulse + (dt or 0.016) end
+function M.update(dt)
+  dt = dt or 0.016
+  pulse = pulse + dt
+  if pairAnim < 1 then pairAnim = math.min(1, pairAnim + dt * 3.5) end
+end
 function M.on_open() isVisible = true end
 function M.on_close() isVisible = false end
-function M.on_session_start() end
+function M.on_session_start() pairKey = nil pairAnim = 1 end
 
 local function carProgress(car)
   local lap = car.lapCount or 0
@@ -107,13 +114,7 @@ function M.main()
   if not isVisible then return end
   local ok, err = pcall(function()
     local cfg = config.get()
-    local sc = cfg.scale
-    -- layout base 640x118 em escala 1; aplicamos escala via coordenadas
-    local baseW, baseH = 640, 118
-    local W, H = baseW * sc, baseH * sc
-    -- Como a janela tem tamanho fixo, desenhamos proporcional com fator k
-    -- (assumimos janela 660x130; se escala mudar, só aumenta fonte)
-    local k = sc
+    local k = draw.fit(cfg.scale, 640, 118)
     local cw, ch = 312 * k, 112 * k
     local gap = 8 * k
 
@@ -161,6 +162,13 @@ function M.main()
       if bestPair then showA, showB = bestPair[1], bestPair[2] end
     end
     local foc2, rival = showA, showB
+    -- animação ao trocar de par (reveal)
+    local key = foc2.idx .. ':' .. rival.idx
+    if pairKey ~= key then
+      if pairKey ~= nil then pairAnim = 0 end
+      pairKey = key
+    end
+    local slideX = (1 - anim.ease_out_quart(math.min(1, pairAnim))) * -30 * k
     -- gap entre os dois exibidos (positivo = rival na frente)
     local d = carProgress(rival.car) - carProgress(foc2.car)
     local gapF = nil
@@ -215,8 +223,8 @@ function M.main()
       ui.drawRect(vec2(x + 0.5, y + 0.5), vec2(x + cw - 0.5, y + ch - 0.5), col, 1.2)
     end
 
-    drawCardK(0, 0, foc2, gapFoc)
-    drawCardK(cw + gap, 0, rival, gapRiv)
+    drawCardK(slideX, 0, foc2, gapFoc)
+    drawCardK(slideX + cw + gap, 0, rival, gapRiv)
     _ = W; _ = H
   end)
   if not ok then ac.debug('PHIL Battle', err) end
