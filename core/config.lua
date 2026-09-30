@@ -16,6 +16,8 @@ local S = {
   mph       = stored('mph', false),
   series    = stored('series', 'RACE TV'),
   showTags  = stored('showTags', true),
+  autoBattle = stored('autoBattle', true),
+  autoLayout = stored('autoLayout', false),
 }
 
 local PRESETS = {
@@ -50,6 +52,8 @@ function M.get()
     mph = S.mph:get() == true,
     series = tostring(S.series:get() or 'RACE TV'),
     showTags = S.showTags:get() ~= false,
+    autoBattle = S.autoBattle:get() ~= false,
+    autoLayout = S.autoLayout:get() == true,
   }
 end
 
@@ -76,6 +80,15 @@ function M.settingsUI()
   if ui.checkbox('Tyre dot na Tower', cfg.showTyre) then S.showTyre:set(not cfg.showTyre) end
   if ui.checkbox('MPH (padrao KM/H)', cfg.mph) then S.mph:set(not cfg.mph) end
   if ui.checkbox('Tags acima dos carros (estilo PHIL TV)', cfg.showTags) then S.showTags:set(not cfg.showTags) end
+  if ui.checkbox('Auto-batalha: Battle segue a briga mais próxima (<1.2s)', cfg.autoBattle) then S.autoBattle:set(not cfg.autoBattle) end
+  ui.separator()
+  ui.text('Posicionamento automático (16:9, proporcional):')
+  if ui.button('Aplicar layout agora') then
+    local n = 0
+    pcall(function() n = require('core.layout').apply() end)
+    ac.debug('TV Layout', 'janelas movidas: ' .. tostring(n))
+  end
+  if ui.checkbox('Auto-layout ao iniciar sessão', cfg.autoLayout) then S.autoLayout:set(not cfg.autoLayout) end
   ui.separator()
   ui.textWrapped('Posicione no Content Manager > Apps: Tower esquerda, Onboard inferior-esquerda, Timing topo-direita, Telemetry inferior-direita. Estilo chapado igual TV — sem transparencia.')
 end

@@ -14,9 +14,12 @@ local radar      = require('widgets.radar')
 local battle     = require('widgets.battle')
 local onboard    = require('widgets.onboard')
 local tags       = require('widgets.tags')
+local alert      = require('widgets.alert')
+local layout     = require('core.layout')
 local cfgmod     = require('core.config')
 
 local init = false
+local M_layoutDone = false
 local session_time = -999999
 local err_count = 1
 
@@ -28,6 +31,7 @@ local function safe(fn)
 end
 
 local function session_start(session_index, restarted)
+  M_layoutDone = false
   safe(tower.on_session_start)
   safe(speed.on_session_start)
   safe(pedals.on_session_start)
@@ -37,6 +41,7 @@ local function session_start(session_index, restarted)
   safe(battle.on_session_start)
   safe(onboard.on_session_start)
   safe(tags.on_session_start)
+  safe(alert.on_session_start)
 end
 
 local function on_game_close()
@@ -62,6 +67,7 @@ function script.update(dt)
     safe(battle.init)
     safe(onboard.init)
     safe(tags.init)
+    safe(alert.init)
   end
 
   if sim and sim.isOnlineRace then
@@ -80,6 +86,16 @@ function script.update(dt)
   safe(function() battle.update(Dt) end)
   safe(function() onboard.update(Dt) end)
   safe(function() tags.update(Dt) end)
+  safe(function() alert.update(Dt) end)
+  -- auto-layout uma vez por sessão (se ativado)
+  if not M_layoutDone then
+    local cfg = nil
+    pcall(function() cfg = cfgmod.get() end)
+    if cfg and cfg.autoLayout then
+      pcall(layout.apply)
+      M_layoutDone = true
+    end
+  end
 end
 
 -- ====== WINDOWS (nomes batem com manifest.ini) ======
@@ -114,6 +130,10 @@ function vsBattleHide(dt) safe(battle.on_close) end
 function vsOnboardMain(dt) safe(onboard.main) end
 function vsOnboardShow(dt) safe(onboard.on_open) end
 function vsOnboardHide(dt) safe(onboard.on_close) end
+
+function vsAlertMain(dt) safe(alert.main) end
+function vsAlertShow(dt) safe(alert.on_open) end
+function vsAlertHide(dt) safe(alert.on_close) end
 
 function vsSettingsMain(dt)
   safe(cfgmod.settingsUI)

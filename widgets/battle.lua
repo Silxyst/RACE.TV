@@ -133,23 +133,39 @@ function M.main()
 
     local focIdx = sim.focusedCar or 0
     local foc = byIdx[focIdx] or list[1]
-    -- rival: carro à frente do focado; se P1, carro atrás
-    local rival = nil
-    for i, e in ipairs(list) do
-      if e.idx == foc.idx then
-        rival = list[i - 1] or list[i + 1]
-        break
-      end
-    end
-    rival = rival or list[1]
-    if rival.idx == foc.idx then rival = list[2] or list[1] end
-
+    -- AUTO-DIRECTOR: briga mais próxima da pista (<1.2s) vence o focado
     local trackLen = sim.trackLengthM or 4500
-    -- gap do focado p/ rival (positivo = rival na frente)
-    local d = carProgress(rival.car) - carProgress(foc.car)
+    local function pairGap(a, b)
+      local dd = carProgress(a.car) - carProgress(b.car)
+      if math.abs(dd) > 1.5 or math.abs(dd) < 0.0001 then return nil end
+      local behind = dd > 0 and b or a
+      local kmh = behind.car.speedKmh or 110
+      if type(kmh) ~= 'number' or kmh < 50 then kmh = 110 end
+      return math.abs(dd) * trackLen / (kmh / 3.6)
+    end
+    local showA, showB = foc, nil
+    do
+      local r = nil
+      for i, e in ipairs(list) do
+        if e.idx == foc.idx then r = list[i - 1] or list[i + 1] break end
+      end
+      showB = r or list[1]
+      if showB.idx == foc.idx then showB = list[2] or list[1] end
+    end
+    if cfg.autoBattle and #list >= 2 then
+      local bestG, bestPair = 1.2, nil
+      for i = 2, #list do
+        local g = pairGap(list[i - 1], list[i])
+        if g and g < bestG then bestG = g bestPair = { list[i - 1], list[i] } end
+      end
+      if bestPair then showA, showB = bestPair[1], bestPair[2] end
+    end
+    local foc2, rival = showA, showB
+    -- gap entre os dois exibidos (positivo = rival na frente)
+    local d = carProgress(rival.car) - carProgress(foc2.car)
     local gapF = nil
     if math.abs(d) < 1.5 and math.abs(d) > 0.0001 then
-      local behind = d > 0 and foc or rival
+      local behind = d > 0 and foc2 or rival
       local kmh = behind.car.speedKmh or 110
       if kmh < 50 then kmh = 110 end
       gapF = math.abs(d) * trackLen / (kmh / 3.6)
@@ -199,7 +215,7 @@ function M.main()
       ui.drawRect(vec2(x + 0.5, y + 0.5), vec2(x + cw - 0.5, y + ch - 0.5), col, 1.2)
     end
 
-    drawCardK(0, 0, foc, gapFoc)
+    drawCardK(0, 0, foc2, gapFoc)
     drawCardK(cw + gap, 0, rival, gapRiv)
     _ = W; _ = H
   end)

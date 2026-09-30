@@ -1,4 +1,13 @@
-# RACE TV v3 // réplica PHIL TV
+# RACE TV v4 // motion + auto (réplica PHIL TV)
+Tower animada + auto-director de batalhas + alerta automático + auto-layout 16:9. Técnicas do CMRT-Broadcast-HUD em `lua-off`.
+
+## Novidades v4
+1. **Motor de animação** (`core/anim.lua`): `remap/ease/damp/popup` (out-quart/back/in-quad) — mesma matemática do `common/settings.lua` do CMRT.
+2. **Tower com vida**: linhas deslizam ao trocar de posição (`rowY` + damp 10 + clip), caution pisca, battle outline pulsa.
+3. **Auto-director** (Battle): com `Auto-batalha` ligado, os cards seguem a briga mais próxima <1.2s em vez do focado.
+4. **TV Alert** (janela nova 470x64, top-center): `FASTEST LAP roxo` ao detectar overall best novo + `YELLOW FLAG` em caution, reveal por clip + fade + slide, some sozinho em ~6s. Igual `new_best_sector` do CMRT.
+5. **Auto-layout** (`core/layout.lua` + botão em Settings): `ac.getAppWindows` + `accessAppWindow:move/resize` com preset 1080p proporcional à resolução real. Botão `Aplicar layout agora` + toggle por sessão.
+6. Onboard/battle mantêm slide-in ao trocar focado; tags com fade por distância.
 Rework a partir dos prints do seu amigo: tower preta/azul, battle cards duplos, onboard topo, telemetry topo e tags.
 
 ## O que foi replicado do PHIL TV

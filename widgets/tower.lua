@@ -6,6 +6,7 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
+local anim = require('core.anim')
 
 local ac = ac
 local ui = ui
@@ -15,12 +16,17 @@ local math = math
 
 local isVisible = false
 local pulse = 0
+local rowY = {}
 
 function M.init() end
-function M.update(dt) pulse = pulse + (dt or 0.016) end
+function M.update(dt)
+  pulse = pulse + (dt or 0.016)
+  -- amortecimento das linhas é feito no main (precisa do dt global)
+  M._dt = dt or 0.016
+end
 function M.on_open() isVisible = true end
 function M.on_close() isVisible = false end
-function M.on_session_start() end
+function M.on_session_start() rowY = {} end
 
 local function carProgress(car)
   local lap = car.lapCount or 0
@@ -100,10 +106,17 @@ function M.main()
     -- ===== LINHAS =====
     local leaderEntry = list[1]
     local prevEntry = nil
+    -- clip da área de linhas (linhas em voo não vazam)
+    ui.pushClipRect(vec2(0, logoH + clockH), vec2(W, logoH + clockH + n * rowH))
     for r = 1, n do
       local e = list[r]
       local car = e.car
-      local ry = logoH + clockH + (r - 1) * rowH
+      local targetY = logoH + clockH + (r - 1) * rowH
+      -- animação suave de troca de posição (estilo CMRT/F1)
+      local ry = rowY[e.idx]
+      if ry == nil then ry = targetY end
+      ry = anim.damp(ry, targetY, 10, M._dt or 0.016)
+      rowY[e.idx] = ry
       local isFoc = (e.idx == focused)
       local isP1 = (r == 1)
       local white = isP1 or isFoc
@@ -163,6 +176,7 @@ function M.main()
       end
       prevEntry = e
     end
+    ui.popClipRect()
 
     -- ===== FOOTER azul: MELHOR VOLTA / serie =====
     local fy = logoH + clockH + n * rowH
