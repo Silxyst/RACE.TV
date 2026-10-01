@@ -10,7 +10,7 @@ local scanT = 99
 
 local function splitsOf(car)
   if not car then return nil end
-  return car.bestLapSplits or car.lastSplits or car.currentSplits
+  return car.bestSplits
 end
 
 function M.update(dt)
@@ -23,14 +23,16 @@ function M.update(dt)
   for i = 0, (sim.carsCount or 1) - 1 do
     local car = ac.getCar(i)
     local sp = car and splitsOf(car) or nil
-    if sp then
+    if sp and car.isConnected then
       for s = 0, 2 do
         local t = sp[s] -- splits indexados em 0 (LapAlly/WEC usam [j-1])
         if t and t > 0 and (not nb[s + 1] or t < nb[s + 1]) then nb[s + 1] = t end
       end
     end
   end
-  mpBest = nb
+  for i = 1, 3 do
+    if nb[i] and (not mpBest[i] or nb[i] < mpBest[i]) then mpBest[i] = nb[i] end
+  end
 end
 
 -- cor do setor s (1..3) do piloto: time = setor fechado nesta volta (ou best)

@@ -6,7 +6,6 @@
 local M = {}
 local config = require('core.config')
 local draw = require('core.draw')
-local cams = require('core.cams')
 
 local ui = ui
 local vec2 = vec2
@@ -17,26 +16,29 @@ local registered = false
 local MAXD = 220
 local TAG_W, TAG_H = 1024, 190
 local carVis = {}
-local nameCache = {}
+local flagCache = {}
 
 local function shortName(n)
   local parts = {}
   for w in tostring(n):gmatch('%S+') do parts[#parts + 1] = w end
   if #parts <= 1 then return tostring(n) end
-  return parts[1]:sub(1, 1) .. '. ' .. table.concat(parts, ' ', 2)
+  return draw.truncate(parts[1], 1) .. '. ' .. table.concat(parts, ' ', 2)
 end
 
 local function flagPath(idx)
   local ok, code = pcall(ac.getDriverNationCode, idx)
+  local cached = flagCache[idx]
+  if cached and cached.code == code then return cached.path end
+  local fp = nil
   if ok and code and #tostring(code) > 0 then
-    return '/content/gui/NationFlags/' .. string.upper(tostring(code)) .. '.png'
+    fp = '/content/gui/NationFlags/' .. string.upper(tostring(code)) .. '.png'
   end
-  return nil
+  flagCache[idx] = { code = code, path = fp }
+  return fp
 end
 
 local function tagDraw(car)
   if not car or not car.isConnected then return end
-  if not cams.gate('TV Tags') then return end
   local cfg = config.get()
   if not cfg.showTags then return end
   if car.isInPit and (car.speedKmh or 0) < 5 then return end
@@ -66,6 +68,13 @@ local function tagDraw(car)
   local FS = 30
   ui.pushDWriteFont(draw.FONT_BOLD)
   local ns = ui.measureDWriteText(display, FS)
+  local nameFontSize = FS
+  if ns.x > 528 then
+    nameFontSize = FS * 528 / ns.x
+    ns = ui.measureDWriteText(display, nameFontSize)
+  end
+  ui.popDWriteFont()
+  ui.pushDWriteFont(draw.FONT_NUM)
   local ps = ui.measureDWriteText(pos, FS)
   ui.popDWriteFont()
 
@@ -80,7 +89,8 @@ local function tagDraw(car)
   local totalW = posW + flagSegW + nameW
   local cx = TAG_W / 2
   local x0 = cx - totalW / 2
-  local y0 = (TAG_H - totalH) / 2
+  local reserved = cfg.pedalTags and 38 or 0
+  local y0 = (TAG_H - totalH - reserved) / 2
   local radius = 10
 
   -- 1) POS (esq)
@@ -111,10 +121,12 @@ local function tagDraw(car)
   ui.popDWriteFont()
 
   ui.pushDWriteFont(draw.FONT_BOLD)
+  ui.pushClipRect(vec2(nx, y0), vec2(nx + nameW, y0 + totalH), true)
   ui.setCursor(vec2(nx + (nameW - math.min(ns.x, nameW - padX * 2)) / 2, y0 + (totalH - ns.y) / 2))
   ui.beginOutline()
-  ui.dwriteText(display, FS, rgbm(1, 1, 1, alpha))
+  ui.dwriteText(display, nameFontSize, rgbm(1, 1, 1, alpha))
   ui.endOutline(rgbm(0, 0, 0, 0.85 * alpha), 2)
+  ui.popClipRect()
   ui.popDWriteFont()
 
   -- pedais progressivos sob a tag (THR verde / BRK vermelho)
@@ -143,7 +155,8 @@ end
 function M.init() end
 function M.update(dt)
   dt = dt or 0.016
-  if not registered then
+  local sim = ac.getSim()
+  if not registered and sim and sim.driverNamesShown and config.get().showTags then
     local ok = pcall(ui.onDriverNameTag, true, rgbm(1, 1, 1, 0), tagDraw,
       { distanceMultiplier = math.ceil(MAXD / 10), tagSize = vec2(TAG_W, TAG_H) })
     if ok then registered = true end
@@ -151,7 +164,7 @@ function M.update(dt)
   -- fade de adjacência (GT7 moveTowards)
   local cfg = config.get()
   if cfg.tagsAdjacent then
-    local sim = ac.getSim()
+    if not sim then return end
     local foc = sim and ac.getCar(sim.focusedCar or 0) or nil
     local fp = foc and foc.racePosition or nil
     local maxD = dt / 0.35
@@ -165,9 +178,8 @@ function M.update(dt)
       carVis[i] = draw.moveTowards(carVis[i] or 0, tgt, maxD)
     end
   end
-  _ = nameCache
 end
-function M.on_session_start() end
+function M.on_session_start() flagCache = {} carVis = {} end
 function M.on_open() end
 function M.on_close() end
 

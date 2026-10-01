@@ -33,7 +33,7 @@ end
 
 -- aproxima atual->alvo com velocidade (para rowY, valores)
 function M.damp(cur, target, speed, dt)
-  local t = math.min(1, (dt or 0.016) * (speed or 10))
+  local t = 1 - math.exp(-math.max(0, dt or 0.016) * (speed or 10))
   return cur + (target - cur) * t
 end
 

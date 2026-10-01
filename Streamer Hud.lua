@@ -1,6 +1,8 @@
 -- ========================================
--- RACE TV v3 // Streamer Hud.lua
--- Replica PHIL TV: tower + battle + onboard + telemetry + tags
+-- RACE TV // Entry point: one real app window per HUD element.
+-- Every FUNCTION_MAIN draws its widget directly, so the CSP
+-- "OBS Apps Redirection" tool can redirect windows to OBS
+-- (texture "Extra: Redirected apps (transparent)").
 -- ========================================
 Dt = 0
 Time = 0
@@ -15,26 +17,88 @@ local battle     = require('widgets.battle')
 local onboard    = require('widgets.onboard')
 local tags       = require('widgets.tags')
 local alert      = require('widgets.alert')
-local director   = require('widgets.director')
 local mapw       = require('widgets.map')
 local lineup     = require('widgets.lineup')
-local layout     = require('core.layout')
+local winsize    = require('core.winsize')
 local cfgmod     = require('core.config')
+local data       = require('core.data')
+local tyres      = require('core.tyres')
+local pits       = require('core.pits')
+local classes    = require('core.classes')
+local sectors   = require('core.sectors')
+local control   = require('core.control')
+local narrator  = require('widgets.narrator')
+local deltaWin  = require('widgets.delta')
+local relative  = require('widgets.relative')
+local fuel      = require('widgets.fuel')
+local sessionW  = require('widgets.session')
+local flagW     = require('widgets.flag')
+local native = require('core.native')
+local rpmod = require('core.rp')
+local records = require('core.records')
+local resultData = require('core.results')
+local resultWindow = require('widgets.results')
+local layouts = require('core.layouts')
+local branding = require('core.branding')
+
+local windows = {
+  { title = 'TV Tower', module = tower, width = 400, height = 446 },
+  { title = 'TV Battle', module = battle, width = 632, height = 166 },
+  { title = 'TV Onboard Top', module = onboard, width = 480, height = 52 },
+  { title = 'TV Telemetry', module = speed, width = 470, height = 80 },
+  { title = 'TV Inputs', module = pedals, width = 300, height = 132 },
+  { title = 'TV Timing', module = lap, width = 300, height = 170 },
+  { title = 'TV Onboard Bar', module = lowerthird, width = 460, height = 92 },
+  { title = 'TV Spotter', module = radar, width = 190, height = 210 },
+  { title = 'TV Alert', module = alert, width = 460, height = 56 },
+  { title = 'TV Map', module = mapw, width = 230, height = 230 },
+  { title = 'TV Lineup', module = lineup, width = 680, height = 418 },
+  { title = 'TV Narrator', module = narrator, width = 430, height = 430 },
+  { title = 'TV Delta', module = deltaWin, width = 460, height = 132 },
+  { title = 'TV Relative', module = relative, width = 320, height = 274 },
+  { title = 'TV Fuel', module = fuel, width = 300, height = 118 },
+  { title = 'TV Session', module = sessionW, width = 460, height = 120 },
+  { title = 'TV Flags', module = flagW, width = 460, height = 84 },
+  { title = 'TV Results', module = resultWindow, width = 680, height = 460 },
+}
+layouts.configure(windows)
 
 local init = false
-local M_layoutDone = false
-local session_time = -999999
-local err_count = 1
+local session_time = nil
+local session_key = nil
+local lastError = {}
 
 local function safe(fn)
   xpcall(fn, function(err)
-    ac.debug('TV ERROR ' .. tostring(err_count), tostring(err) .. '\n' .. debug.traceback())
-    err_count = err_count + 1
+    local message = tostring(err)
+    if not lastError[message] or Time - lastError[message] >= 5 then
+      ac.debug('TV ERROR', message .. '\n' .. debug.traceback())
+      ac.log('[Race TV] ' .. message .. '\n' .. debug.traceback())
+      lastError[message] = Time
+    end
   end)
 end
 
 local function session_start(session_index, restarted)
-  M_layoutDone = false
+  Time = 0
+  lastError = {}
+  safe(data.on_session_start)
+  safe(tyres.on_session_start)
+  safe(pits.on_session_start)
+  safe(classes.on_session_start)
+  safe(sectors.on_session_start)
+  safe(winsize.on_session_start)
+  safe(control.on_session_start)
+  safe(rpmod.on_session_start)
+  safe(native.on_session_start)
+  safe(records.on_session_start)
+  safe(resultData.on_session_start)
+  safe(resultWindow.on_session_start)
+  safe(deltaWin.on_session_start)
+  safe(relative.on_session_start)
+  safe(fuel.on_session_start)
+  safe(sessionW.on_session_start)
+  safe(flagW.on_session_start)
   safe(tower.on_session_start)
   safe(speed.on_session_start)
   safe(pedals.on_session_start)
@@ -45,26 +109,33 @@ local function session_start(session_index, restarted)
   safe(onboard.on_session_start)
   safe(tags.on_session_start)
   safe(alert.on_session_start)
-  safe(director.on_session_start)
   safe(mapw.on_session_start)
   safe(lineup.on_session_start)
+  local sim = ac.getSim()
+  if sim then session_time = sim.currentSessionTime end
 end
 
 local function on_game_close()
+  safe(alert.on_release)
 end
 
 function script.update(dt)
-  err_count = 1
-  Dt = dt or 0.016
-  Time = Time + Dt
-
+  cfgmod.refresh()
+  safe(layouts.beforeUpdate)
+  safe(branding.update)
+  Dt = math.max(0, math.min(dt or 0, 0.1))
   local sim = ac.getSim()
+  if not sim then return end
+  if sim.isPaused then Dt = 0 end
+  Time = Time + Dt
 
   if not init then
     init = true
-    pcall(ac.onRelease, on_game_close, nil)
-    pcall(ac.onSessionStart, session_start)
+    ac.onRelease(on_game_close)
+    ac.onSessionStart(session_start)
     safe(tower.init)
+    safe(rpmod.init)
+    safe(control.init)
     safe(speed.init)
     safe(pedals.init)
     safe(lap.init)
@@ -74,18 +145,34 @@ function script.update(dt)
     safe(onboard.init)
     safe(tags.init)
     safe(alert.init)
-    safe(director.init)
     safe(mapw.init)
     safe(lineup.init)
+    ac.log('[Race TV 12.3.0] Stable scaling, narrator controls, manual comparison, crossing gaps, results, layouts and branding.')
   end
 
-  if sim and sim.isOnlineRace then
-    if sim.currentSessionTime and sim.currentSessionTime < session_time then
-      session_start(-1, -1)
-    end
+  local key = (ac.getTrackID() or '') .. '/' .. (ac.getTrackLayout() or '') .. '#' .. sim.currentSessionIndex
+  if key ~= session_key or (session_time and sim.currentSessionTime < session_time - 1000) then
+    session_start(sim.currentSessionIndex, true)
+    session_key = key
   end
-  if sim then session_time = sim.currentSessionTime or 0 end
+  session_time = sim.currentSessionTime
+  safe(function() data.update(Dt) end)
+  safe(tyres.update)
+  safe(function() pits.update(Dt) end)
+  safe(classes.update)
+  safe(function() sectors.update(Dt) end)
+  safe(function() control.update(Dt) end)
+  safe(function() rpmod.update(Dt) end)
+  safe(function() native.update(Dt) end)
+  safe(records.update)
+  safe(resultData.update)
+  safe(function() resultWindow.update(Dt) end)
 
+  safe(function() deltaWin.update(Dt) end)
+  safe(function() relative.update(Dt) end)
+  safe(function() fuel.update(Dt) end)
+  safe(function() sessionW.update(Dt) end)
+  safe(function() flagW.update(Dt) end)
   safe(function() tower.update(Dt) end)
   safe(function() speed.update(Dt) end)
   safe(function() pedals.update(Dt) end)
@@ -96,65 +183,61 @@ function script.update(dt)
   safe(function() onboard.update(Dt) end)
   safe(function() tags.update(Dt) end)
   safe(function() alert.update(Dt) end)
-  safe(function() director.update(Dt) end)
   safe(function() mapw.update(Dt) end)
   safe(function() lineup.update(Dt) end)
-  -- auto-layout uma vez por sessão (se ativado)
-  if not M_layoutDone then
-    local cfg = nil
-    pcall(function() cfg = cfgmod.get() end)
-    if cfg and cfg.autoLayout then
-      pcall(layout.apply)
-      M_layoutDone = true
-    end
-  end
+  safe(function() winsize.prepare(windows, cfgmod.get()) end)
+  safe(winsize.update)
+  safe(layouts.afterUpdate)
 end
 
 -- ====== WINDOWS (nomes batem com manifest.ini) ======
-function vsTowerMain(dt) safe(tower.main) end
-function vsTowerShow(dt) safe(tower.on_open) end
-function vsTowerHide(dt) safe(tower.on_close) end
-
-function vsSpeedMain(dt) safe(speed.main) end
-function vsSpeedShow(dt) safe(speed.on_open) end
-function vsSpeedHide(dt) safe(speed.on_close) end
-
-function vsPedalsMain(dt) safe(pedals.main) end
-function vsPedalsShow(dt) safe(pedals.on_open) end
-function vsPedalsHide(dt) safe(pedals.on_close) end
-
-function vsLapMain(dt) safe(lap.main) end
-function vsLapShow(dt) safe(lap.on_open) end
-function vsLapHide(dt) safe(lap.on_close) end
-
-function vsLowerMain(dt) safe(lowerthird.main) end
-function vsLowerShow(dt) safe(lowerthird.on_open) end
-function vsLowerHide(dt) safe(lowerthird.on_close) end
-
-function vsRadarMain(dt) safe(radar.main) end
-function vsRadarShow(dt) safe(radar.on_open) end
-function vsRadarHide(dt) safe(radar.on_close) end
-
-function vsBattleMain(dt) safe(battle.main) end
-function vsBattleShow(dt) safe(battle.on_open) end
-function vsBattleHide(dt) safe(battle.on_close) end
-
-function vsOnboardMain(dt) safe(onboard.main) end
-function vsOnboardShow(dt) safe(onboard.on_open) end
-function vsOnboardHide(dt) safe(onboard.on_close) end
-
-function vsAlertMain(dt) safe(alert.main) end
-function vsAlertShow(dt) safe(alert.on_open) end
-function vsAlertHide(dt) safe(alert.on_close) end
-
-function vsMapMain(dt) safe(mapw.main) end
-function vsMapShow(dt) safe(mapw.on_open) end
-function vsMapHide(dt) safe(mapw.on_close) end
-
-function vsLineupMain(dt) safe(lineup.main) end
-function vsLineupShow(dt) safe(lineup.on_open) end
-function vsLineupHide(dt) safe(lineup.on_close) end
-
-function vsSettingsMain(dt)
-  safe(cfgmod.settingsUI)
+-- Registrados como global (padrão CMRT) e em script (padrão wiki).
+local function export(name, fn)
+  pcall(function() _G[name] = fn end)
+  script[name] = fn
 end
+
+local function bindWindow(base, title, module)
+  local opened = false
+  export(base .. 'Main', function(dt)
+    -- Native window resizing can settle after update. Clip this pass to the
+    -- current content area without changing its logical scale or requesting size.
+    ui.pushClipRect(vec2(0, 0), ui.windowSize(), true)
+    safe(module.main)
+    ui.popClipRect()
+  end)
+  export(base .. 'Show', function(dt)
+    -- Duplicate notifications from a resize/render layer must not replay intros.
+    if opened or winsize.isResizing(title) then return end
+    opened = true
+    safe(module.on_open)
+  end)
+  export(base .. 'Hide', function(dt)
+    if not opened then return end
+    opened = false
+    safe(module.on_close)
+  end)
+end
+
+bindWindow('vsTower', 'TV Tower', tower)
+bindWindow('vsSpeed', 'TV Telemetry', speed)
+bindWindow('vsPedals', 'TV Inputs', pedals)
+bindWindow('vsLap', 'TV Timing', lap)
+bindWindow('vsLower', 'TV Onboard Bar', lowerthird)
+bindWindow('vsRadar', 'TV Spotter', radar)
+bindWindow('vsBattle', 'TV Battle', battle)
+bindWindow('vsOnboard', 'TV Onboard Top', onboard)
+bindWindow('vsAlert', 'TV Alert', alert)
+bindWindow('vsMap', 'TV Map', mapw)
+bindWindow('vsLineup', 'TV Lineup', lineup)
+bindWindow('vsNarrator', 'TV Narrator', narrator)
+bindWindow('vsDelta', 'TV Delta', deltaWin)
+bindWindow('vsRelative', 'TV Relative', relative)
+bindWindow('vsFuel', 'TV Fuel', fuel)
+bindWindow('vsSession', 'TV Session', sessionW)
+bindWindow('vsFlag', 'TV Flags', flagW)
+bindWindow('vsResults', 'TV Results', resultWindow)
+
+export('vsSettingsMain', function(dt)
+  safe(cfgmod.settingsUI)
+end)

@@ -1,35 +1,33 @@
--- ========================================
--- RACE TV // core/pits.lua
--- Contador de paradas (ACTV pit_stops_count).
--- Conta entradas no pit após a 1ª volta completa (ignora spawn).
--- ========================================
+-- Count a serviced pit-box visit after leaving, not a drive-through or initial spawn.
 local M = {}
-
-local stops = {}
-local wasInPit = {}
-local lastKey = nil
-
-function M.update()
+local states = {}
+function M.update(dt)
   local sim = ac.getSim()
   if not sim then return end
-  local key = (ac.getTrackID and ac.getTrackID() or '') .. '#' .. tostring(sim.currentSessionIndex or 0)
-  if key ~= lastKey then stops = {} wasInPit = {} lastKey = key end
-  for i = 0, (sim.carsCount or 1) - 1 do
+  for i = 0, sim.carsCount - 1 do
     local car = ac.getCar(i)
-    if car then
-      local inp = car.isInPit == true
-      if inp and not wasInPit[i] then
-        if (car.lapCount or 0) >= 1 then
-          stops[i] = (stops[i] or 0) + 1
-        end
+    if car and car.isConnected then
+      local state = states[i]
+      if not state then
+        state = { stops = 0, lastLap = car.lapCount, inBox = car.isInPit, seconds = 0, leftSpawn = false }
+        states[i] = state
       end
-      wasInPit[i] = inp
-    end
+      if car.isInPit then
+        if not state.inBox then
+          state.seconds = 0
+          state.visit = state.leftSpawn and sim.isSessionStarted
+        end
+        state.seconds = state.seconds + (dt or 0)
+      elseif state.inBox then
+        if state.visit and state.seconds >= 1 then state.stops = state.stops + 1 end
+        state.seconds, state.visit = 0, false
+      end
+      if not car.isInPit and car.speedKmh > 5 then state.leftSpawn = true end
+      state.inBox, state.lastLap = car.isInPit, car.lapCount
+    else states[i] = nil end
   end
 end
-
-function M.get(idx) return stops[idx] or 0 end
-function M.on_session_start() stops = {} wasInPit = {} lastKey = nil end
+function M.get(idx) return states[idx] and states[idx].stops or 0 end
+function M.on_session_start() states = {} end
 function M.init() end
-
 return M

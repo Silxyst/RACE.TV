@@ -1,78 +1,70 @@
--- ========================================
--- RACE TV v3 // widgets/onboard.lua
--- Barra superior estilo PHIL: [POS] [NOME colorido + equipe] ONBOARD
--- Top-center da tela.
--- ========================================
+-- RACE TV v10 // Barra superior do piloto em glass.
 local M = {}
-local config = require('core.config')
-local draw = require('core.draw')
-local cams = require('core.cams')
-local winfit = require('core.winfit')
+local config, draw = require('core.config'), require('core.draw')
+local anim = require('core.anim')
 
-local ac = ac
-local ui = ui
-local vec2 = vec2
-
-local isVisible = false
-local pulse = 0
 local lastF = -2
-local anim = 1
+local intro = 0
 function M.init() end
 function M.update(dt)
-  pulse = pulse + (dt or 0.016)
+  dt = dt or 0.016
+  intro = math.min(1, intro + dt * 2.6)
   local sim = ac.getSim()
   local f = sim and sim.focusedCar or 0
-  if f ~= lastF then lastF = f anim = 0 end
-  if anim < 1 then anim = math.min(1, anim + (dt or 0.016) * 4) end
+  if f ~= lastF then lastF = f intro = 0 end
 end
-function M.on_open() isVisible = true end
-function M.on_close() isVisible = false end
-function M.on_session_start() anim = 0 end
+function M.on_open() end
+function M.on_close() end
+function M.on_session_start() intro = 0 end
 
 function M.main()
-  if not isVisible then return end
-  if not cams.gate('TV Onboard Top') then return end
-  local ok, err = pcall(function()
-    local cfg = config.get()
-    local k = draw.fit(cfg.scale, 480, 52)
-    local W, H = 480 * k, 52 * k
-    local slide = (1 - anim) * -18 * k
-    local x, y = slide, 0
+  local sim = ac.getSim()
+  if not sim then return end
+  local foc = sim.focusedCar or 0
+  local car = ac.getCar(foc)
+  if not car then return end
+  local cfg = config.get()
+  local k = draw.fit(cfg.scale, 480, 52, 'TV Onboard Top')
+  local W, H = 480 * k, 52 * k
+  local p = anim.ease_out_quart(intro)
+  local alpha = p
+  local slide = (1 - p) * -24 * k
 
-    local sim = ac.getSim()
-    if not sim then return end
-    local foc = sim.focusedCar or 0
-    local car = ac.getCar(foc)
-    if not car then return end
-    local okN, nm = pcall(ac.getDriverName, foc)
-    local dname = (okN and nm and #tostring(nm) > 0) and draw.fullName(nm, 24) or 'DRIVER'
-    local okC, cn = pcall(ac.getCarName, foc)
-    local team = ((okC and cn) or ''):upper()
-    if #team > 22 then team = team:sub(1, 22) end
-    local pos = tostring(car.racePosition or '-')
-    local col = draw.driverColor(foc)
+  local okN, nm = pcall(ac.getDriverName, foc)
+  local dname = (okN and nm and #tostring(nm) > 0) and draw.fullName(nm, 24) or 'DRIVER'
+  local number, customTeam = require('core.branding').driver(foc)
+  local code = require('core.classes').short(foc)
+  local team = draw.truncate((customTeam .. (number ~= '' and (' · #' .. number) or '')
+    .. (code ~= '' and (' · ' .. code) or '')):upper(), 40)
+  local pos = tostring(car.racePosition or '-')
+  local col = draw.driverColor(foc)
+  local lum = 0.299 * col.r + 0.587 * col.g + 0.114 * col.b
+  local ink = lum > 0.65 and draw.PHIL_BG or draw.WHITE
 
-    local posW, labW = 64 * k, 74 * k
-    -- POS box navy
-    ui.drawRectFilled(vec2(x, y), vec2(x + posW, y + H), draw.PHIL_BG)
-    draw.textF(draw.FONT_NUM, x, y + 2 * k, pos, 30 * k, col, ui.Alignment.Center, posW, 34 * k)
-    -- nome bar colorida
-    local nx = x + posW
-    local nw = W - posW - labW
-    local dark = draw.darken(col, 0.7)
-    ui.drawRectFilledMultiColor(vec2(nx, y), vec2(nx + nw, y + H), col, dark, dark, col)
-    local lum = 0.299 * col.r + 0.587 * col.g + 0.114 * col.b
-    local ink = lum > 0.65 and draw.PHIL_BG or draw.WHITE
-    draw.textF(draw.FONT_HEAD, nx, y + 4 * k, dname, 21 * k, ink, ui.Alignment.Center, nw, 26 * k)
-    draw.textF(draw.FONT_TXT, nx, y + H - 16 * k, team, 10 * k, ink, ui.Alignment.Center, nw, 13 * k)
-    -- ONBOARD label
-    ui.drawRectFilled(vec2(nx + nw, y), vec2(x + W, y + H), draw.PHIL_BG)
-    draw.textF(draw.FONT_HEAD, nx + nw, y + 8 * k, 'ONBOARD', 11 * k, draw.WHITE, ui.Alignment.Center, labW, 20 * k)
-    -- sublinhado
-    ui.drawRectFilled(vec2(nx, y + H - 3 * k), vec2(nx + nw, y + H), draw.PHIL_BG)
-    winfit.fit('TV Onboard Top', W, H)
-  end)
-  if not ok then ac.debug('PHIL Onboard', err) end
+  local posW, labW = 58 * k, 78 * k
+  local nw = W - posW - labW
+  ui.pushClipRect(vec2(0, 0), vec2(W, H), true)
+  -- base
+  ui.drawRectFilled(vec2(slide, 0), vec2(slide + W, H), draw.surface(0.92 * alpha), 7)
+  -- bloco de posição
+  ui.drawRectFilled(vec2(slide, 0), vec2(slide + posW, H), draw.fade(col, alpha), 7)
+  draw.textF(draw.FONT_NUM, slide, 6 * k, pos, 28 * k, draw.fade(ink, alpha),
+    ui.Alignment.Center, posW, 38 * k)
+  -- nome com clip próprio
+  ui.pushClipRect(vec2(slide + posW + 6 * k, 0), vec2(slide + posW + nw - 6 * k, H), true)
+  draw.textF(draw.FONT_HEAD, slide + posW + 6 * k, 4 * k, dname, 19 * k, draw.fade(draw.WHITE, alpha),
+    ui.Alignment.Start, nw - 12 * k, 26 * k)
+  draw.textF(draw.FONT_TXT, slide + posW + 6 * k, H - 18 * k, team, 9.5 * k,
+    draw.fade(draw.PHIL_GRAY, alpha), ui.Alignment.Start, nw - 12 * k, 15 * k)
+  ui.popClipRect()
+  -- selo onboard
+  draw.pill(slide + posW + nw + 8 * k, 12 * k, labW - 16 * k, H - 24 * k, draw.fade(draw.WHITE, alpha))
+  if not draw.logo(slide + posW + nw + 8*k, 12*k, labW-16*k, H-24*k, alpha) then
+    draw.textF(draw.FONT_HEAD, slide + posW + nw + 8 * k, 12 * k, 'PILOTO', 10 * k,
+      draw.fade(draw.PHIL_BG, alpha), ui.Alignment.Center, labW - 16 * k, H - 24 * k)
+  end
+  -- filete inferior
+  ui.drawRectFilled(vec2(slide, H - 3 * k), vec2(slide + W, H), draw.fade(col, alpha), 2)
+  ui.popClipRect()
 end
-
 return M

@@ -1,61 +1,40 @@
--- ========================================
--- RACE TV // core/tyres.lua
--- Tracker de composto + idade em voltas (ACTV "H (3 L)").
--- Reseta a idade quando o composto muda.
--- ========================================
+-- Tyre age is observed since app/session start. Virtual KM detects same-compound swaps.
 local M = {}
-
-local info = {} -- idx -> {comp, sinceLap}
-local lastKey = nil
-
-local function compOf(car)
-  local c = car.tyreCompound or car.compound or car.tyreShortName
-  if c == nil then return nil end
-  return tostring(c)
+local info = {}
+local function compound(idx)
+  local name = ac.getTyresName(idx)
+  return name and name ~= '' and name or nil
 end
-
 function M.update()
   local sim = ac.getSim()
   if not sim then return end
-  local key = (ac.getTrackID and ac.getTrackID() or '') .. '#' .. tostring(sim.currentSessionIndex or 0)
-  if key ~= lastKey then info = {} lastKey = key end
-  for i = 0, (sim.carsCount or 1) - 1 do
+  for i = 0, sim.carsCount - 1 do
     local car = ac.getCar(i)
-    if car then
-      local comp = compOf(car)
-      local lap = car.lapCount or 0
+    if car and car.isConnected then
+      local comp, lap = compound(i), car.lapCount
+      local km = car.physicsAvailable and car.wheels[0].tyreVirtualKM or nil
       local cur = info[i]
-      if not cur then
-        info[i] = { comp = comp, sinceLap = lap }
-      elseif comp ~= cur.comp then
-        info[i] = { comp = comp, sinceLap = lap }
+      if not cur or cur.comp ~= comp or lap < cur.lastLap
+        or (km and cur.km and km + 0.1 < cur.km) then
+        cur = { comp = comp, sinceLap = lap }
+        info[i] = cur
       end
-    end
+      cur.lastLap, cur.km = lap, km
+    else info[i] = nil end
   end
 end
-
--- retorna letra curta + idade; ex: 'M', 5
 function M.get(idx)
-  local sim = ac.getSim()
-  local car = sim and ac.getCar(idx) or nil
   local cur = info[idx]
-  local comp = (cur and cur.comp) or (car and compOf(car))
-  local letter = '·'
-  if comp then
-    local c = string.upper(comp)
-    if c:find('SOFT') or c == 'S' then letter = 'S'
-    elseif c:find('MEDIUM') or c == 'M' then letter = 'M'
-    elseif c:find('HARD') or c == 'H' then letter = 'H'
-    elseif c:find('WET') or c:find('RAIN') then letter = 'W'
-    elseif c:find('INTER') then letter = 'I'
-    else letter = c:sub(1, 1) end
-  end
-  local age = 0
-  if car and cur then age = math.max(0, (car.lapCount or 0) - (cur.sinceLap or 0)) end
-  return letter, age, comp
+  if not cur or not cur.comp then return '?', nil, nil end
+  local c, letter = cur.comp:upper(), '?'
+  if c:find('INTER') or c == 'I' then letter = 'I'
+  elseif c:find('WET') or c:find('RAIN') or c == 'W' then letter = 'W'
+  elseif c:find('SOFT') or c == 'S' or c == 'SS' then letter = 'S'
+  elseif c:find('MEDIUM') or c == 'M' then letter = 'M'
+  elseif c:find('HARD') or c == 'H' then letter = 'H'
+  else letter = c end
+  return letter, math.max(0, cur.lastLap - cur.sinceLap), cur.comp
 end
-
-function M.on_session_start() info = {} lastKey = nil end
+function M.on_session_start() info = {} end
 function M.init() end
-
 return M
