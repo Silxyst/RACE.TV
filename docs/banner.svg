@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0a14"/>
+      <stop offset="0.6" stop-color="#101024"/>
+      <stop offset="1" stop-color="#1c1633"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e10600"/>
+      <stop offset="1" stop-color="#ff4d00"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="360" rx="24" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="10" fill="url(#accent)"/>
+  <rect x="0" y="350" width="1200" height="10" fill="url(#accent)" opacity="0.6"/>
+  <text x="70" y="170" font-family="Arial, Helvetica, sans-serif" font-size="110" font-weight="900" font-style="italic" fill="#ffffff" letter-spacing="2">RACE TV</text>
+  <text x="72" y="225" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="bold" font-style="italic" fill="#8a93a6" letter-spacing="6">STREAMER HUD · BROADCAST GLASS</text>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" font-style="italic">
+    <rect x="72" y="258" width="150" height="40" rx="20" fill="#e10600"/>
+    <text x="147" y="285" text-anchor="middle" fill="#ffffff">TOWER</text>
+    <rect x="236" y="258" width="150" height="40" rx="20" fill="#1c37b4"/>
+    <text x="311" y="285" text-anchor="middle" fill="#ffffff">BATTLE</text>
+    <rect x="400" y="258" width="150" height="40" rx="20" fill="#00b450"/>
+    <text x="475" y="285" text-anchor="middle" fill="#ffffff">DELTA</text>
+    <rect x="564" y="258" width="170" height="40" rx="20" fill="#3a3f4a"/>
+    <text x="649" y="285" text-anchor="middle" fill="#ffffff">19 JANELAS</text>
+    <rect x="748" y="258" width="150" height="40" rx="20" fill="#3a3f4a"/>
+    <text x="823" y="285" text-anchor="middle" fill="#ffffff">OBS READY</text>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="900" font-style="italic">
+    <rect x="990" y="90" width="140" height="100" rx="14" fill="#ffffff"/>
+    <text x="1060" y="163" text-anchor="middle" fill="#0a0a14">P1</text>
+  </g>
+  <text x="1060" y="220" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" font-style="italic" text-anchor="middle" fill="#8a93a6">v12.3.0</text>
+</svg>
