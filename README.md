@@ -1,113 +1,247 @@
-<p align="center">
-  <img src="docs/banner.svg" alt="RACE TV — Streamer HUD" width="100%">
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-12.3.0-e10600?style=for-the-badge" alt="versão">
-  <img src="https://img.shields.io/badge/Assetto%20Corsa-CSP%20Lua-orange?style=for-the-badge" alt="CSP Lua">
-  <img src="https://img.shields.io/badge/tests-76%20passing-00b450?style=for-the-badge" alt="testes">
-  <img src="https://img.shields.io/badge/OBS-redirect-1c37b4?style=for-the-badge" alt="OBS">
-  <img src="https://img.shields.io/badge/Real%20Penalty-ready-ffd500?style=for-the-badge" alt="Real Penalty">
-</p>
+![RACE TV Banner](docs/banner.svg)
 
-<p align="center"><b>HUD de transmissão para Assetto Corsa + CSP.</b> Torre, batalhas, delta, combustível, sessão, bandeiras, resultados e painel do narrador — cada elemento numa <b>janela real</b> pronta para o <b>OBS Apps Redirection</b> (<i>Extra: Redirected apps (transparent)</i>).</p>
+### 🏁 RACE TV — Broadcast Glass HUD para Assetto Corsa
+
+**A solução definitiva para transmissões de simulação de corrida**
+
+[![Version](https://img.shields.io/badge/version-12.3.0-e10600?style=for-the-badge&logo=github)](../../releases)
+[![CSP Lua](https://img.shields.io/badge/Assetto%20Corsa-CSP%20Lua-orange?style=for-the-badge&logo=lua)](https://www.assettocorsa.net/)
+[![Tests](https://img.shields.io/badge/tests-76%20passing-00b450?style=for-the-badge&logo=pytest)](tests/)
+[![OBS Ready](https://img.shields.io/badge/OBS-Studio%20Ready-1c37b4?style=for-the-badge&logo=obs-studio)](https://obsproject.com/)
+[![Real Penalty](https://img.shields.io/badge/Real%20Penalty-Compatible-ffd500?style=for-the-badge&logo=warning)](https://www.racecraft.com.br/)
+
+**[🌐 Visite o Site](https://silxyst.github.io/RACE.TV/)** • **[📥 Download](../../releases)** • **[📖 Documentação](docs/)** • **[💬 Discussões](../../discussions)**
+
+</div>
 
 ---
 
-## ✨ Destaques
+## ✨ Características Principais
 
-| | |
-|---|---|
-| 🏁 | **Timing Tower estilo broadcast** — Pos · Piloto · Pneu · Volta · ΔPos · Int · Last, paginação estável, clique para focar |
-| ⚔️ | **Battle + comparação manual** — dupla automática ou A/B, última volta, média e tendência |
-| 📊 | **Delta, Relative, Timing e Fuel** dedicados para o piloto focado |
-| 🏆 | **Multiclass de verdade** — tags do `ui_car.json`, paleta com 1 clique, isolamento por categoria |
-| 🎙️ | **Painel do narrador** — foco, favoritos, comparação, layouts e resultados na mão |
-| 🚩 | **Real Penalty** — selos DT/SG/TIME/WARN/DQ, safety car e alertas direto do chat da sala |
-| 🖥️ | **19 janelas redirecionáveis** + layouts salvos (Corrida, Quali, Replay, Vertical) |
+<table align="center">
+<tr>
+<td align="center" width="50%">
 
-## 📦 Instalação
+### 🏆 **Torre de Transmissão**
+Posição, piloto, pneu, volta, ΔPos, intervalo, última volta com paginação estável e clique para focar
 
-1. Baixe o **[último release](../../releases)** e extraia a pasta `Streamer Hud` para `assettocorsa/apps/lua/`.
-2. Ative **Streamer Hud** nos apps Lua do CSP e **reinicie o AC** (o manifest só recarrega ao abrir o jogo).
-3. Abra as janelas na barra lateral de apps (`TV Tower`, `TV Battle`, …) e ajuste tudo em **`TV Settings`**.
+</td>
+<td align="center" width="50%">
 
-## 📺 OBS Studio (recomendado)
+### ⚔️ **Battle & Comparação**
+Dupla automática ou A/B manual, com última volta, média e tendência
 
-1. No jogo, abra o app **OBS Apps Redirection** e marque as janelas `TV ...`.
-2. No OBS, na fonte do Assetto Corsa, escolha a textura **Extra: Redirected apps (transparent)**.
-3. As janelas somem da tela e continuam renderizando para a live. As tags 3D ficam na captura do jogo.
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-## 🪟 Janelas
+### 📊 **Telemetria Dedicada**
+Delta, Relative, Timing e Combustível do piloto focado em tempo real
 
-| Janela | Mostra |
-|---|---|
-| TV Tower | Posição, piloto, pneu, volta, Δ posições, intervalo, última volta, paginação |
-| TV Battle | Dupla, gap, voltas, média e tendência do intervalo |
-| TV Delta | Delta live gigante, previsão e barra ±2s |
-| TV Relative | Rivais ±8s do focado, com clique para focar |
-| TV Telemetry | Velocidade, RPM, marchas 1–8 e mini pedais |
-| TV Inputs | Acelerador, freio e volante suavizados |
-| TV Timing | Atual, anterior, melhor, delta live e previsão |
-| TV Fuel | Litros, consumo/volta, autonomia e alerta |
-| TV Session | Série, relógio/voltas, bandeira e ambiente |
-| TV Flags | Bandeira gigante (pisca no amarelo) |
-| TV Onboard Top / Bar | Identificação do focado |
-| TV Spotter | Carros próximos do focado |
-| TV Map | Traçado e posições |
-| TV Lineup | Grid antes da largada |
-| TV Alert | Melhores voltas, bandeiras e punições |
-| TV Narrator | Foco manual, favoritos, comparação, layouts |
-| TV Results | Pódio, tabela, melhor volta e recorde da pista |
-| TV Settings | Todas as configurações |
+</td>
+<td align="center" width="50%">
 
-## ⚙️ Guia rápido
+### 🏅 **Multiclass Real**
+Tags do `ui_car.json`, paleta com 1 clique, isolamento por categoria
 
-- **Escala e linhas**: `TV Settings → Escala / Linhas da torre` (padrão 12 linhas, como as torres de referência).
-- **Coluna da torre**: `TV_TOWER_MODE` alterna AUTO · GAP · BEST · TYRE.
-- **Multiclass**: ative a classe, digite a tag do `ui_car.json` e **clique na cor** (12 cores + seletor nativo). Override por carro/skin no focado.
-- **Isolar categoria**: escolha em `TV Settings` ou **clique no rodapé da torre** para alternar.
-- **Layouts**: salve posições por perfil (Corrida, Classificação, Replay, Vertical).
-- **Logo**: coloque em `Streamer Hud/assets/` e informe `assets/logo.png` (PNG/JPG/DDS/BMP).
-- **Real Penalty**: funciona junto sem configurar nada — selos e alertas aparecem sozinhos quando o RP anunciar no chat.
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-## 🧪 Qualidade
+### 🎙️ **Painel do Narrador**
+Foco, favoritos, comparação, layouts e resultados ao alcance
 
+</td>
+<td align="center" width="50%">
+
+### 🚩 **Real Penalty Integration**
+Selos DT/SG/TIME/WARN/DQ, safety car e alertas direto do chat
+
+</td>
+</tr>
+</table>
+
+---
+
+## 📺 Janelas Disponíveis (19 Total)
+
+| Janela | Descrição |
+|--------|-----------|
+| **TV Tower** | Classificação com posição, piloto, pneu, volta e gap |
+| **TV Battle** | Duelo entre dois pilotos |
+| **TV Delta** | Delta gigante com previsão |
+| **TV Relative** | Rivais próximos (±8s) |
+| **TV Telemetry** | Velocidade, RPM, marchas e pedais |
+| **TV Inputs** | Entrada de controles suavizada |
+| **TV Timing** | Tempos: atual, anterior, melhor |
+| **TV Fuel** | Combustível, consumo e autonomia |
+| **TV Session** | Série, relógio, bandeira, clima |
+| **TV Flags** | Bandeira em grande escala |
+| **TV Onboard** | Identificação do piloto focado |
+| **TV Spotter** | Carros próximos |
+| **TV Map** | Traçado e posições ao vivo |
+| **TV Lineup** | Grid antes da largada |
+| **TV Alert** | Melhores voltas e punições |
+| **TV Narrator** | Painel de narração com controles |
+| **TV Results** | Pódio, tabela e recorde da pista |
+| **TV Settings** | Todas as configurações |
+
+---
+
+## 🚀 Instalação Rápida
+
+### 1️⃣ Download
+Baixe o **[último release](../../releases)** e extraia a pasta `Streamer Hud` para:
 ```
+assettocorsa/apps/lua/
+```
+
+### 2️⃣ Ativação
+- Abra Assetto Corsa
+- Vá para **CSP Apps → Lua Apps**
+- Ative **Streamer Hud**
+- **Reinicie o AC**
+
+### 3️⃣ Configuração
+- Abra as janelas em **Apps → TV Tower, TV Battle, ...**
+- Configure tudo em **TV Settings**
+- Escolha o layout desejado
+
+---
+
+## 🖥️ Integração com OBS Studio
+
+```mermaid
+graph LR
+    A["🎮 Assetto Corsa"] --> B["OBS Apps Redirection"]
+    B --> C["Marcar Janelas TV"]
+    C --> D["OBS Source"]
+    D --> E["Selecionar Extra: Redirected apps"]
+    E --> F["✨ Transmissão Perfeita"]
+```
+
+### Passos:
+1. No jogo: **OBS Apps Redirection** → marque as janelas `TV ...`
+2. No OBS: selecione **Extra: Redirected apps (transparent)**
+3. Pronto! As janelas desaparecem da tela mas continuam renderizando
+
+---
+
+## ⚙️ Guia Rápido de Configuração
+
+| Configuração | Localização | Nota |
+|---|---|---|
+| **Escala** | `TV Settings → Escala` | Padrão: 12 linhas |
+| **Coluna Torre** | `TV_TOWER_MODE` | AUTO / GAP / BEST / TYRE |
+| **Multiclass** | `TV Settings` | 12 cores + seletor nativo |
+| **Isolar Categoria** | Footer da torre | Um clique para alternar |
+| **Layouts** | Salve por perfil | Corrida, Quali, Replay, Vertical |
+| **Logo** | `assets/logo.png` | PNG/JPG/DDS/BMP |
+| **Real Penalty** | Automático | Funciona sem configurar |
+
+---
+
+## 🧪 Qualidade & Testes
+
+Executar testes:
+```bash
 python tests/run_audit.py
 ```
 
-**76 grupos** em LuaJIT (`lupa`): 19 janelas em grids 0–40, escalas, ultrawide, UI scale, redirect, cliques, multiclass, Real Penalty e viewports pequenas — sem o jogo.
+**76 grupos de testes** em LuaJIT:
+- ✅ 19 janelas em grids 0–40
+- ✅ Escalas e ultrawide
+- ✅ UI scale e redirect
+- ✅ Cliques e multiclass
+- ✅ Real Penalty
+- ✅ Viewports pequenas
 
-## 📜 Versões
+---
+
+## 📊 Histórico de Versões
 
 | Versão | Destaque |
-|---|---|
-| 12.3 | Real Penalty via chat (selos, alertas, safety car) |
-| 12.2 | Torre estilo CMRT (Int + Last), sem códigos, 12 linhas |
-| 12.1 | Pneu por linha + polimento (hover, placeholder, divisores) |
-| 12.0 | TV Delta, Relative, Fuel, Session, Flags + recordes + pacotes de série |
-| 11.5–11.1 | Categorias, pílulas por classe, paleta um clique, posições únicas, escala estável |
-| 11.0–10.2 | Correção do pisca, clique para focar, narrador, comparação manual |
+|--------|----------|
+| **12.3** | Real Penalty via chat (selos, alertas, safety car) |
+| **12.2** | Torre estilo CMRT (Int + Last), sem códigos, 12 linhas |
+| **12.1** | Pneu por linha + polimento (hover, placeholder, divisores) |
+| **12.0** | Delta, Relative, Fuel, Session, Flags + recordes |
+| **11.5–11.1** | Categorias, pílulas por classe, paleta um clique |
+| **11.0–10.2** | Pisca corrigido, clique para focar, narrador |
+
+---
+
+## 🔧 Detalhes Técnicos
 
 <details>
-<summary><b>🔧 Detalhes técnicos</b> (clique para expandir)</summary>
+<summary><b>Clique para expandir</b></summary>
 
-- Callbacks registrados como **global** (padrão CMRT) **e** em `script` (padrão wiki).
-- Desenho confinado à janela (clips), condição para o redirect funcionar sem cortes.
-- Nenhum callback de desenho redimensiona janelas — tamanhos preparados em `script.update`.
-- Posições normalizadas 1..N (o jogo às vezes repete/pula `racePosition`).
-- Intervalos medidos por passagem têm prioridade; sem referência, `---`.
-- Pneus via `ac.getTyresName`; idade e paradas observadas desde o acompanhamento.
-- Gaps nativos (`ac.getGapBetweenCars`, throttle 2 s) + estimativa de fallback.
-- Penalidades do RP via `ac.onChatMessage` (só leitura); DT/SG limpam ao cruzar o pitlane.
-- Persistência em `ac.storage` com prefixo `ETV_*`; recordes por pista em `ETV_rec_*`.
-- Tempo de sessão em milissegundos; alpha sempre 0..1; `ac.getUI().uiScale` para escala.
-- Estados zerados ao trocar sessão/pista ou retroceder; áudio liberado ao sair.
+- **Callbacks**: Registrados como global (padrão CMRT) e em `script`
+- **Desenho**: Confinado à janela (clips) para redirect sem cortes
+- **Redimensionamento**: Nenhum callback de desenho redimensiona janelas
+- **Posições**: Normalizadas 1..N (jogo às vezes repete/pula `racePosition`)
+- **Intervalos**: Medidos por passagem têm prioridade
+- **Pneus**: Via `ac.getTyresName` com idade e paradas observadas
+- **Gaps**: Nativos (`ac.getGapBetweenCars`) + fallback
+- **Real Penalty**: Via `ac.onChatMessage` (leitura)
+- **Persistência**: `ac.storage` com prefixo `ETV_*`
+- **Tempo**: Em milissegundos, alpha 0..1
 
 </details>
 
-## 🙏 Referências
+---
 
-CMRT Broadcast/Complete · YATTA · WEC/NLS/FSH · LapAlly · ACTV · GT7 tags · F1-25 · helicorsa.
-Fontes em `fonts/`, sons em `assets/`.
+## 🎨 Customização Avançada
+
+### Temas
+Edite em `Streamer Hud/config/colors.lua`:
+```lua
+COLORS = {
+  PRIMARY = 0xFF1E90FF,      -- Azul
+  ACCENT = 0xFFFFD700,       -- Ouro
+  DANGER = 0xFFE10600,       -- Vermelho
+  SUCCESS = 0xFF00b450       -- Verde
+}
+```
+
+### Fontes
+Coloque arquivos TTF em `Streamer Hud/fonts/`
+
+### Assets Customizados
+- Logo: `Streamer Hud/assets/logo.png`
+- Sons: `Streamer Hud/assets/sounds/`
+
+---
+
+## 🙏 Referências & Inspiração
+
+Agradecimentos a:
+- **CMRT** (Broadcast/Complete)
+- **YATTA** e comunidade
+- **WEC/NLS/FSH** pela telemetria
+- **LapAlly** e **ACTV**
+- **F1 25** pelos estilos
+- **helicorsa** pela expertise
+
+---
+
+## 📞 Suporte & Contribuição
+
+- 💬 [Discussões](../../discussions) - Dúvidas e sugestões
+- 🐛 [Issues](../../issues) - Reportar bugs
+- 📖 [Wiki](../../wiki) - Documentação técnica
+- 🌟 Gostou? Deixe uma estrela ⭐
+
+---
+
+<div align="center">
+
+### Feito com ❤️ para a comunidade de simulação de corrida
+
+**[Visite o Site](https://silxyst.github.io/RACE.TV/)** • **[Baixe Agora](../../releases)**
+
+</div>
